@@ -8,7 +8,7 @@
 | Version | 1.0 |
 | Status | Final — Ready for Review |
 | Date | 26 October 2026 |
-| Reviewers | Head of Developer Experience; Engineering Manager, Docs Platform |
+| Reviewer | Mentor — Sprint 2 assignment |
 
 ---
 
@@ -227,8 +227,9 @@ No feature in this document depends on a field that the Docs team has not confir
 
 ## 14. Approval
 
+This PRD is submitted to the mentor for approval as part of the Sprint 2 simulation assignment.
+
 | Role | Name | Status |
 |---|---|---|
 | Author | Sri Kishore S | Signed |
-| Head of Developer Experience | To be assigned | Pending |
-| Engineering Manager, Docs Platform | To be assigned | Pending |
+| Mentor / Assignment Reviewer | To be completed by mentor | Pending |
