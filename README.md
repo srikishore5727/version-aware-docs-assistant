@@ -15,7 +15,11 @@ A software vendor maintains API references, migration guides, and changelogs acr
 
 ## Status
 
-Sprint 2, Day 1 — repository initialized. Product requirements are being finalised in `docs/PRD.md`.
+Sprint 2, Day 1 — repository initialized and v1.0 PRD published.
+
+## Documentation
+
+- [Product Requirements Document v1.0](docs/PRD.md) — problem, users, KPIs, scope, data workflow, and risks.
 
 ## Roadmap
 
