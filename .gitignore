@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Local data and generated indexes
+*.db
+*.sqlite
+*.sqlite3
+data/index/
+.cache/
+
+# Logs
+*.log
+logs/
+
+# Editors and OS files
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Node (reserved for future frontend tooling)
+node_modules/
