@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VADA — Version-Aware Docs Assistant</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M16 12 32 44 48 12' fill='none' stroke='%23151518' stroke-width='9.2' stroke-linecap='round' stroke-linejoin='round'/><circle cx='32' cy='54' r='3' fill='%234F46E5'/></svg>">
+<style>
+  :root{
+    --bg:#FBFBFA;
+    --surface:#FFFFFF;
+    --ink:#151518;
+    --ink-2:#3F3F46;
+    --muted:#71717A;
+    --faint:#A1A1AA;
+    --line:#E7E5E4;
+    --line-2:#F4F4F2;
+    --accent:#4F46E5;
+    --accent-2:#4338CA;
+    --accent-ink:#3730A3;
+    --accent-soft:#EEF2FF;
+    --ok:#047857;
+    --ok-soft:#ECFDF5;
+    --warn:#B45309;
+    --warn-soft:#FFFBEB;
+    --radius:18px;
+    --shadow-sm:0 1px 2px rgba(21,21,24,.05);
+    --shadow:0 1px 2px rgba(21,21,24,.04), 0 18px 40px -22px rgba(21,21,24,.24);
+    --ease:cubic-bezier(.2,.7,.3,1);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size:15px;line-height:1.5;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(900px 460px at 50% -12%, rgba(99,102,241,.10), transparent 70%);
+  }
+  a{color:inherit}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.89em}
+  code{background:#F4F4F5;border:1px solid #E4E4E7;border-radius:6px;padding:1.5px 5px;color:#27272A;white-space:nowrap}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* ============ preview bar (demo only) ============ */
+  .review-bar{
+    position:sticky;top:0;z-index:90;
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    padding:9px 24px;background:#131316;color:#E4E4E7;
+    font-size:12px;letter-spacing:.01em;
+  }
+  .review-bar .dot{width:7px;height:7px;border-radius:50%;background:#818CF8;display:inline-block;margin-right:8px;box-shadow:0 0 0 3px rgba(129,140,248,.18)}
+  .review-bar strong{font-weight:650;color:#FAFAFA}
+  .review-bar .muted{color:#71717A}
+  .review-bar .spacer{flex:1}
+  .states{display:flex;gap:3px;background:#242427;padding:3px;border-radius:10px}
+  .states button{
+    appearance:none;border:0;background:transparent;color:#A1A1AA;
+    font:inherit;font-size:12px;font-weight:500;padding:5px 11px;border-radius:7px;cursor:pointer;
+    transition:background .15s var(--ease), color .15s var(--ease);
+  }
+  .states button:hover{color:#E4E4E7}
+  .states button.active{background:#FAFAFA;color:#18181B;font-weight:650}
+
+  /* ============ nav ============ */
+  .nav{
+    position:relative;z-index:2;
+    max-width:1000px;margin:0 auto;padding:22px 28px 4px;
+    display:flex;align-items:center;gap:14px;
+  }
+  .mark{width:34px;height:34px;flex:none;display:block}
+  .brand{display:flex;align-items:baseline;gap:10px;min-width:0}
+  .brand-name{font-size:16.5px;font-weight:750;letter-spacing:.02em}
+  .brand-sep{width:1px;height:15px;background:var(--line);align-self:center}
+  .brand-sub{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .beta{
+    font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--accent-ink);background:var(--accent-soft);
+    border:1px solid #DDE4FF;padding:3px 7px;border-radius:5px;
+  }
+  .nav .right{margin-left:auto;display:flex;align-items:center;gap:20px}
+  .nav .right a{font-size:13.5px;color:var(--muted);text-decoration:none;transition:color .15s}
+  .nav .right a:hover{color:var(--ink)}
+  .avatar{
+    width:30px;height:30px;border-radius:50%;
+    background:var(--accent-soft);color:var(--accent-ink);
+    display:grid;place-items:center;font-size:11px;font-weight:750;
+    border:1px solid #DDE4FF;
+  }
+
+  /* ============ layout ============ */
+  main{position:relative;z-index:1;max-width:1000px;margin:0 auto;padding:0 28px 80px}
+  .hero{max-width:700px;padding:46px 0 28px}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--accent-ink);background:var(--accent-soft);
+    padding:5px 11px;border-radius:999px;margin-bottom:20px;
+    border:1px solid #DDE4FF;
+  }
+  .eyebrow i{width:6px;height:6px;border-radius:50%;background:var(--accent);display:block}
+  h1{margin:0 0 14px;font-size:46px;line-height:1.08;letter-spacing:-.042em;font-weight:700}
+  h1 em{font-style:normal;color:var(--accent);background:linear-gradient(90deg,#4F46E5,#7C3AED);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .lede{margin:0;color:var(--ink-2);font-size:16.5px;line-height:1.62;max-width:600px}
+
+  /* ============ ask panel ============ */
+  .ask-panel{
+    background:var(--surface);border:1px solid var(--line);border-radius:20px;
+    padding:18px 18px 16px;box-shadow:var(--shadow);margin-bottom:34px;
+  }
+  .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field > span{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .select{
+    appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink);
+    border-radius:9px;padding:7px 30px 7px 11px;font:inherit;font-size:13px;cursor:pointer;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717A' stroke-width='2.5' stroke-linecap='round'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat;background-position:right 10px center;
+    transition:border-color .15s var(--ease), box-shadow .15s var(--ease);
+  }
+  .select:hover{border-color:#D4D4D8}
+  .select:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,70,229,.12)}
+  .ask-row{display:flex;gap:10px;align-items:stretch}
+  .ask-input{
+    flex:1;height:54px;border:1px solid var(--line);border-radius:12px;
+    padding:0 16px;font:inherit;font-size:15px;color:var(--ink);background:#fff;min-width:0;
+    transition:border-color .15s var(--ease), box-shadow .15s var(--ease);
+  }
+  .ask-input::placeholder{color:var(--faint)}
+  .ask-input:hover{border-color:#D4D4D8}
+  .ask-input:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,70,229,.12)}
+  .btn{
+    appearance:none;border:0;border-radius:12px;background:var(--accent);color:#fff;
+    font:inherit;font-weight:620;font-size:14.5px;padding:0 26px;cursor:pointer;white-space:nowrap;
+    box-shadow:0 8px 18px -10px rgba(79,70,229,.95);
+    transition:background .15s var(--ease), transform .06s var(--ease), box-shadow .15s var(--ease);
+  }
+  .btn:hover{background:var(--accent-2);box-shadow:0 10px 22px -10px rgba(79,70,229,1)}
+  .btn:active{transform:translateY(1px)}
+  .try{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:13px}
+  .try .label{font-size:12px;color:var(--muted);margin-right:2px}
+  .chip{
+    appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink-2);
+    font:inherit;font-size:12.3px;padding:5px 11px;border-radius:999px;cursor:pointer;
+    transition:background .15s var(--ease), border-color .15s var(--ease);
+  }
+  .chip:hover{background:#FAFAF9;border-color:#D4D4D8;color:var(--ink)}
+
+  /* ============ shared ============ */
+  .section-label{
+    display:flex;align-items:center;gap:12px;
+    font-size:10.5px;font-weight:750;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 12px;
+  }
+  .section-label::after{content:"";flex:1;height:1px;background:var(--line)}
+  .hidden{display:none !important}
+
+  /* ============ answer ============ */
+  .answer{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:22px 24px 20px;box-shadow:var(--shadow-sm);
+  }
+  .answer-head{display:flex;align-items:center;gap:9px;margin-bottom:13px;flex-wrap:wrap}
+  .pill{
+    font-size:10.5px;font-weight:750;letter-spacing:.09em;text-transform:uppercase;
+    background:var(--accent-soft);color:var(--accent-ink);padding:4px 9px;border-radius:6px;
+  }
+  .confidence{
+    display:inline-flex;align-items:center;gap:5px;
+    font-size:11.5px;font-weight:550;color:var(--ok);background:var(--ok-soft);
+    border:1px solid #A7F3D0;padding:3px 8px;border-radius:6px;
+  }
+  .confidence::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--ok)}
+  .answer-meta{font-size:12px;color:var(--muted);margin-left:auto}
+  .ghost{
+    appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink-2);
+    font:inherit;font-size:12px;font-weight:550;padding:5px 10px;border-radius:7px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;
+    transition:background .15s var(--ease), border-color .15s var(--ease);
+  }
+  .ghost:hover{background:#FAFAF9;border-color:#D4D4D8}
+  .answer p{margin:0 0 11px;font-size:16px;line-height:1.68;color:var(--ink)}
+  .answer p:last-child{margin-bottom:0}
+  .cite{
+    display:inline-grid;place-items:center;width:17px;height:17px;border-radius:5px;margin:0 1px;
+    background:var(--accent-soft);color:var(--accent-ink);
+    font-size:10.5px;font-weight:750;vertical-align:2px;text-decoration:none;
+    transition:background .15s var(--ease);
+  }
+  .cite:hover{background:#E0E7FF}
+
+  /* ============ sources ============ */
+  .sources{margin-top:26px}
+  .source{
+    display:flex;gap:14px;
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    padding:16px 18px;margin-bottom:10px;
+    transition:border-color .18s var(--ease), box-shadow .18s var(--ease), transform .18s var(--ease);
+  }
+  .source:hover{border-color:#D4D4D8;box-shadow:var(--shadow-sm);transform:translateY(-1px)}
+  .src-icon{
+    width:32px;height:32px;flex:none;border-radius:9px;display:grid;place-items:center;
+    margin-top:1px;
+  }
+  .src-icon svg{width:16px;height:16px}
+  .ic-api{background:#EEF2FF;color:#4338CA}
+  .ic-mig{background:#ECFDF5;color:#047857}
+  .ic-log{background:#FFF7ED;color:#C2410C}
+  .src-body{min-width:0;flex:1}
+  .source-top{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:8px}
+  .tag{font-size:10.8px;font-weight:620;padding:3px 8px;border-radius:6px;border:1px solid transparent}
+  .tag-type{background:#F4F4F5;color:var(--ink-2);border-color:#E4E4E7}
+  .tag-ver{background:#fff;color:var(--accent-ink);border-color:#C7D2FE}
+  .tag-current{background:var(--ok-soft);color:var(--ok);border-color:#A7F3D0}
+  .score{margin-left:auto;font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:7px;white-space:nowrap}
+  .meter{width:42px;height:4px;border-radius:2px;background:#E4E4E7;overflow:hidden}
+  .meter i{display:block;height:100%;background:var(--accent);border-radius:2px}
+  .source h3{margin:0 0 5px;font-size:14.8px;font-weight:640;letter-spacing:-.008em}
+  .snippet{
+    margin:0;color:var(--ink-2);font-size:13.6px;line-height:1.58;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .source-foot{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:11.8px;color:var(--muted);flex-wrap:wrap}
+  .source-foot a{margin-left:auto;text-decoration:none;color:var(--accent-ink);font-weight:580;white-space:nowrap}
+  .source-foot a:hover{text-decoration:underline}
+
+  /* ============ first run ============ */
+  .examples{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:34px}
+  .example{
+    appearance:none;text-align:left;cursor:pointer;
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    padding:15px 16px;display:flex;gap:12px;align-items:flex-start;font:inherit;
+    transition:border-color .18s var(--ease), box-shadow .18s var(--ease), transform .18s var(--ease);
+  }
+  .example:hover{border-color:#C7D2FE;box-shadow:var(--shadow-sm);transform:translateY(-1px)}
+  .example .src-icon{margin-top:0}
+  .ex-q{display:block;font-size:14px;font-weight:580;color:var(--ink);margin-bottom:3px;letter-spacing:-.005em}
+  .ex-meta{display:block;font-size:11.8px;color:var(--muted)}
+  .how{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+    border-top:1px solid var(--line);padding-top:24px;
+  }
+  .step{display:flex;gap:12px;align-items:flex-start}
+  .step-n{
+    width:24px;height:24px;flex:none;border-radius:50%;display:grid;place-items:center;
+    background:var(--accent-soft);color:var(--accent-ink);font-size:11.5px;font-weight:750;
+    border:1px solid #DDE4FF;
+  }
+  .step h4{margin:1px 0 3px;font-size:13.5px;font-weight:620;letter-spacing:-.005em}
+  .step p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.5}
+
+  /* ============ not found ============ */
+  .notice{
+    background:var(--warn-soft);border:1px solid #FDE68A;border-left:3px solid #D97706;
+    border-radius:14px;padding:20px 22px;
+  }
+  .notice-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .notice h2{margin:0;font-size:16px;font-weight:660;color:#7C2D12;letter-spacing:-.01em}
+  .notice p{margin:0;color:#78350F;font-size:14.2px;line-height:1.6;max-width:640px}
+  .notice .hint{margin-top:11px;font-size:12.8px;color:#92400E}
+  .low{margin-top:26px}
+  .low .source{opacity:.74}
+  .low .source:hover{opacity:1}
+  .tie{
+    font-size:10.8px;font-weight:620;color:var(--warn);background:#fff;
+    border:1px solid #FDE68A;padding:3px 8px;border-radius:6px;
+  }
+
+  /* ============ loading ============ */
+  .skel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px}
+  .skel-line{
+    height:13px;border-radius:7px;margin-bottom:11px;
+    background:linear-gradient(90deg,#F1F0EF 25%,#E7E5E4 37%,#F1F0EF 63%);
+    background-size:400% 100%;animation:shimmer 1.3s ease infinite;
+  }
+  .skel-line.w90{width:90%}.skel-line.w75{width:75%}.skel-line.w50{width:50%}
+  .skel-line:last-child{margin-bottom:0}
+  @keyframes shimmer{0%{background-position:100% 50%}100%{background-position:0 50%}}
+  .loading-note{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted);margin-top:15px}
+  .spinner{width:13px;height:13px;border:2px solid #E4E4E7;border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ============ footer ============ */
+  footer{
+    border-top:1px solid var(--line);margin-top:60px;padding-top:20px;
+    color:var(--muted);font-size:12.2px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;
+  }
+  footer .right{margin-left:auto;display:flex;align-items:center;gap:8px}
+  footer a{color:var(--accent-ink);text-decoration:none}
+  footer a:hover{text-decoration:underline}
+
+  /* ============ responsive ============ */
+  @media (max-width:720px){
+    h1{font-size:34px}
+    .hero{padding-top:32px}
+    .ask-row{flex-direction:column}
+    .btn{height:48px}
+    .brand-sub,.brand-sep{display:none}
+    .nav .right a{display:none}
+    .examples{grid-template-columns:1fr}
+    .how{grid-template-columns:1fr;gap:16px}
+    .review-bar{padding:9px 14px}
+    .review-bar .muted{display:none}
+    main,.nav{padding-left:18px;padding-right:18px}
+  }
+  @media print{
+    .review-bar{display:none}
+    body::before{display:none}
+    .source:hover{transform:none;box-shadow:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== demo-only preview bar ===== -->
+<div class="review-bar">
+  <span><span class="dot"></span><strong>UX Mock</strong></span>
+  <span class="muted">Preview control · not part of the product</span>
+  <span class="spacer"></span>
+  <span class="muted">State</span>
+  <div class="states" role="group" aria-label="Preview state">
+    <button data-state="empty" onclick="showState('empty')">First run</button>
+    <button data-state="answered" class="active" onclick="showState('answered')">Answered</button>
+    <button data-state="notfound" onclick="showState('notfound')">Not found</button>
+    <button data-state="loading" onclick="showState('loading')">Loading</button>
+  </div>
+</div>
+
+<nav class="nav">
+  <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
+    <path d="M16 12 L32 44 L48 12" fill="none" stroke="#151518" stroke-width="9.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="32" cy="54" r="3" fill="#4F46E5"/>
+  </svg>
+
+  <div class="brand">
+    <span class="brand-name">VADA</span>
+    <span class="brand-sep"></span>
+    <span class="brand-sub">Version-Aware Docs Assistant</span>
+    <span class="beta">Internal beta</span>
+  </div>
+
+  <div class="right">
+    <a href="#">Documentation</a>
+    <a href="#">Changelog</a>
+    <div class="avatar" title="Sri Kishore S">SK</div>
+  </div>
+</nav>
+
+<main>
+  <section class="hero">
+    <div class="eyebrow"><i></i>Developer knowledge tool</div>
+    <h1>Ask the docs.<br>Get the <em>exact source</em>.</h1>
+    <p class="lede">Answers drawn only from the API reference, migration guides, and changelogs — always with the document and version they came from.</p>
+  </section>
+
+  <section class="ask-panel">
+    <div class="filters">
+      <label class="field">
+        <span>Version</span>
+        <select class="select" aria-label="Filter by version">
+          <option selected>v3 · latest</option>
+          <option>v2</option>
+          <option>v1</option>
+          <option>All versions</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Document type</span>
+        <select class="select" aria-label="Filter by document type">
+          <option selected>All types</option>
+          <option>API reference</option>
+          <option>Migration guide</option>
+          <option>Changelog</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="ask-row">
+      <input class="ask-input" id="queryInput" aria-label="Your question"
+             value="Does user_name still work in v3, or do I need to change it?">
+      <button class="btn" type="button" onclick="runSearch()">Ask</button>
+    </div>
+
+    <div class="try">
+      <span class="label">Try</span>
+      <button class="chip" type="button" onclick="setQuery('What changed in v3.0.0?')">What changed in v3.0.0?</button>
+      <button class="chip" type="button" onclick="setQuery('How do I paginate list responses?')">Paginate list responses</button>
+      <button class="chip" type="button" onclick="setQuery('Was user_name removed?')">Was user_name removed?</button>
+    </div>
+  </section>
+
+  <!-- ============ FIRST RUN ============ -->
+  <section id="state-empty" class="hidden">
+    <h2 class="section-label">Start with a question</h2>
+    <div class="examples">
+      <button class="example" type="button" onclick="askExample('Does user_name still work in v3?')">
+        <span class="src-icon ic-api">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v4a2 2 0 0 1-2 2 2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h1"/><path d="M16 3h1a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2 2 2 0 0 0-2 2v4a2 2 0 0 1-2 2h-1"/></svg>
+        </span>
+        <span><span class="ex-q">Does user_name still work in v3?</span><span class="ex-meta">API reference · v3</span></span>
+      </button>
+
+      <button class="example" type="button" onclick="askExample('How do I migrate from v2 to v3?')">
+        <span class="src-icon ic-mig">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13l-3-3"/><path d="M20 17H7l3 3"/></svg>
+        </span>
+        <span><span class="ex-q">How do I migrate from v2 to v3?</span><span class="ex-meta">Migration guide · v2 → v3</span></span>
+      </button>
+
+      <button class="example" type="button" onclick="askExample('What changed in v3.0.0?')">
+        <span class="src-icon ic-log">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12"/><path d="M8 12h12"/><path d="M8 18h12"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg>
+        </span>
+        <span><span class="ex-q">What changed in v3.0.0?</span><span class="ex-meta">Changelog · v3.0.0</span></span>
+      </button>
+
+      <button class="example" type="button" onclick="askExample('How do I paginate list responses?')">
+        <span class="src-icon ic-api">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        </span>
+        <span><span class="ex-q">How do I paginate list responses?</span><span class="ex-meta">API reference · v3</span></span>
+      </button>
+    </div>
+
+    <div class="how">
+      <div class="step">
+        <span class="step-n">1</span>
+        <div><h4>Ask in plain English</h4><p>No query syntax. Ask the way you'd ask a teammate.</p></div>
+      </div>
+      <div class="step">
+        <span class="step-n">2</span>
+        <div><h4>We retrieve passages</h4><p>Keyword search finds the most relevant sections for your version.</p></div>
+      </div>
+      <div class="step">
+        <span class="step-n">3</span>
+        <div><h4>Every answer is cited</h4><p>The exact document and version are shown beneath the answer.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ANSWERED ============ -->
+  <section id="state-answered" aria-live="polite">
+    <article class="answer">
+      <div class="answer-head">
+        <span class="pill">Answer</span>
+        <span class="confidence">High confidence</span>
+        <span class="answer-meta">3 sources · 1.2 s</span>
+        <button class="ghost" type="button" onclick="copyAnswer(this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          Copy
+        </button>
+      </div>
+      <div id="answerText">
+        <p>No. In v3, <code>user_name</code> was renamed to <code>display_name</code> on the user object. Requests that still send <code>user_name</code> are rejected with a <strong>422 Unprocessable Entity</strong> error.<a class="cite" href="#s1">1</a><a class="cite" href="#s2">2</a></p>
+        <p><code>POST /users</code> also returns <strong>201 Created</strong> instead of 200.<a class="cite" href="#s3">3</a></p>
+      </div>
+    </article>
+
+    <div class="sources">
+      <h2 class="section-label">Sources</h2>
+
+      <article class="source" id="s1">
+        <span class="src-icon ic-api">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v4a2 2 0 0 1-2 2 2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h1"/><path d="M16 3h1a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2 2 2 0 0 0-2 2v4a2 2 0 0 1-2 2h-1"/></svg>
+        </span>
+        <div class="src-body">
+          <div class="source-top">
+            <span class="tag tag-type">API reference</span>
+            <span class="tag tag-ver">v3</span>
+            <span class="tag tag-current">Current</span>
+            <span class="score"><span class="meter"><i style="width:92%"></i></span>0.92</span>
+          </div>
+          <h3>Create user</h3>
+          <p class="snippet"><code>display_name</code> (string, required) — replaces <code>user_name</code>, which was removed in v3. Requests containing <code>user_name</code> return 422.</p>
+          <div class="source-foot">
+            <span>Request body · Updated 12 Oct 2026</span>
+            <a href="#">Open in docs ↗</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="source" id="s2">
+        <span class="src-icon ic-mig">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13l-3-3"/><path d="M20 17H7l3 3"/></svg>
+        </span>
+        <div class="src-body">
+          <div class="source-top">
+            <span class="tag tag-type">Migration guide</span>
+            <span class="tag tag-ver">v2 → v3</span>
+            <span class="score"><span class="meter"><i style="width:88%"></i></span>0.88</span>
+          </div>
+          <h3>Renaming user fields</h3>
+          <p class="snippet">Rename <code>user_name</code> to <code>display_name</code> in every request body. The v3 API rejects the old field with a 422 error.</p>
+          <div class="source-foot">
+            <span>Step 2 of 7 · Updated 08 Oct 2026</span>
+            <a href="#">Open in docs ↗</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="source" id="s3">
+        <span class="src-icon ic-log">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12"/><path d="M8 12h12"/><path d="M8 18h12"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg>
+        </span>
+        <div class="src-body">
+          <div class="source-top">
+            <span class="tag tag-type">Changelog</span>
+            <span class="tag tag-ver">v3.0.0</span>
+            <span class="score"><span class="meter"><i style="width:74%"></i></span>0.74</span>
+          </div>
+          <h3>Breaking changes</h3>
+          <p class="snippet">Removed: <code>user_name</code> on the user object. Added: <code>display_name</code>. <code>POST /users</code> now returns 201.</p>
+          <div class="source-foot">
+            <span>Released 01 Oct 2026</span>
+            <a href="#">Open in docs ↗</a>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ NOT FOUND ============ -->
+  <section id="state-notfound" class="hidden" aria-live="polite">
+    <div class="notice">
+      <div class="notice-head">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16.5h.01"/></svg>
+        <h2>No reliable answer in the docs</h2>
+      </div>
+      <p>The indexed documentation does not cover Okta SSO. Rather than guess, VADA stops here and shows what it did find.</p>
+      <p class="hint">Try rephrasing, widen the version filter, or browse the authentication section manually.</p>
+    </div>
+
+    <div class="low">
+      <h2 class="section-label">Closest matches · low confidence</h2>
+
+      <article class="source">
+        <span class="src-icon ic-api">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7l8-4z"/></svg>
+        </span>
+        <div class="src-body">
+          <div class="source-top">
+            <span class="tag tag-type">API reference</span>
+            <span class="tag tag-ver">v3</span>
+            <span class="tie">Not relevant enough</span>
+            <span class="score"><span class="meter"><i style="width:31%;background:#D97706"></i></span>0.31</span>
+          </div>
+          <h3>Authentication overview</h3>
+          <p class="snippet">All requests use a bearer token. Tokens are issued by the platform identity service and expire after 60 minutes.</p>
+          <div class="source-foot">
+            <span>Overview · Updated 02 Oct 2026</span>
+            <a href="#">Open in docs ↗</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="source">
+        <span class="src-icon ic-mig">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13l-3-3"/><path d="M20 17H7l3 3"/></svg>
+        </span>
+        <div class="src-body">
+          <div class="source-top">
+            <span class="tag tag-type">Migration guide</span>
+            <span class="tag tag-ver">v2 → v3</span>
+            <span class="tie">Not relevant enough</span>
+            <span class="score"><span class="meter"><i style="width:24%;background:#D97706"></i></span>0.24</span>
+          </div>
+          <h3>Token scope changes</h3>
+          <p class="snippet">Scopes are now validated per endpoint. Update integrations that relied on a single broad scope.</p>
+          <div class="source-foot">
+            <span>Step 5 of 7 · Updated 08 Oct 2026</span>
+            <a href="#">Open in docs ↗</a>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ LOADING ============ -->
+  <section id="state-loading" class="hidden" aria-live="polite">
+    <div class="skel">
+      <div class="skel-line w50"></div>
+      <div class="skel-line w90"></div>
+      <div class="skel-line w75"></div>
+    </div>
+    <div class="loading-note"><span class="spinner"></span>Searching 12 documents across v3…</div>
+  </section>
+
+  <footer>
+    <span>VADA · UX mock v1.0</span>
+    <span>Answers are generated only from indexed documentation.</span>
+    <span class="right">Every answer cites its source · <a href="#">Give feedback</a></span>
+  </footer>
+</main>
+
+<script>
+  var queries = {
+    empty: "",
+    answered: "Does user_name still work in v3, or do I need to change it?",
+    notfound: "How do I set up SSO with Okta?",
+    loading: "What changed in v3.0.0?"
+  };
+
+  var placeholders = {
+    empty: "Ask anything about the API, migrations, or changelogs…",
+    answered: "Does user_name still work in v3, or do I need to change it?",
+    notfound: "How do I set up SSO with Okta?",
+    loading: "What changed in v3.0.0?"
+  };
+
+  function showState(name){
+    ["empty", "answered", "notfound", "loading"].forEach(function(s){
+      document.getElementById("state-" + s).classList.toggle("hidden", s !== name);
+    });
+    document.querySelectorAll(".states button").forEach(function(b){
+      b.classList.toggle("active", b.dataset.state === name);
+    });
+    var input = document.getElementById("queryInput");
+    input.value = queries[name];
+    input.placeholder = placeholders[name];
+  }
+
+  function setQuery(text){
+    document.getElementById("queryInput").value = text;
+  }
+
+  function askExample(text){
+    setQuery(text);
+    runSearch();
+  }
+
+  function runSearch(){
+    showState("loading");
+    window.setTimeout(function(){ showState("answered"); }, 1200);
+  }
+
+  function copyAnswer(btn){
+    var text = document.getElementById("answerText").innerText;
+    var done = function(){
+      var old = btn.innerHTML;
+      btn.innerHTML = "Copied";
+      window.setTimeout(function(){ btn.innerHTML = old; }, 1600);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function(){ fallbackCopy(text); done(); });
+    } else {
+      fallbackCopy(text);
+      done();
+    }
+  }
+
+  function fallbackCopy(text){
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+</script>
+</body>
+</html>

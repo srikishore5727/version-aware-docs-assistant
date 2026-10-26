@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VADA — Brand Guidelines</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M16 12 32 44 48 12' fill='none' stroke='%23151518' stroke-width='9.2' stroke-linecap='round' stroke-linejoin='round'/><circle cx='32' cy='54' r='3' fill='%234F46E5'/></svg>">
+<style>
+  :root{
+    --ink:#151518;--ink-2:#3F3F46;--muted:#71717A;--faint:#A1A1AA;
+    --line:#E7E5E4;--line-2:#F4F4F2;--paper:#FBFBFA;--white:#fff;
+    --accent:#4F46E5;--accent-2:#4338CA;--accent-ink:#3730A3;--accent-soft:#EEF2FF;
+    --ok:#047857;--ok-soft:#ECFDF5;--warn:#B45309;--warn-soft:#FFFBEB;--danger:#B91C1C;
+    --r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:22px;
+    --shadow-sm:0 1px 2px rgba(21,21,24,.05);
+    --shadow:0 1px 2px rgba(21,21,24,.04),0 18px 40px -22px rgba(21,21,24,.24);
+    --font:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  code{font-family:var(--mono);font-size:.86em;background:#F4F4F5;border:1px solid #E4E4E7;border-radius:5px;padding:1.5px 5px}
+
+  /* hero */
+  .hero{position:relative;border-bottom:1px solid var(--line);background:
+    radial-gradient(900px 380px at 20% -10%,rgba(99,102,241,.12),transparent 65%),
+    radial-gradient(700px 320px at 90% 0%,rgba(124,58,237,.08),transparent 60%),var(--white)}
+  .hero-in{max-width:1080px;margin:0 auto;padding:34px 28px 54px}
+  .topline{display:flex;align-items:center;gap:14px;margin-bottom:64px}
+  .topline .tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .topline .right{margin-left:auto;font-size:12.5px;color:var(--muted)}
+  .lockup{display:flex;align-items:center;gap:16px;margin-bottom:26px}
+  .lockup svg{width:64px;height:64px}
+  .lock-text .name{font-size:30px;font-weight:750;letter-spacing:.02em;line-height:1}
+  .lock-text .sub{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:6px;font-weight:600}
+  h1{margin:0 0 14px;font-size:52px;line-height:1.04;letter-spacing:-.045em;font-weight:700}
+  h1 em{font-style:normal;background:linear-gradient(90deg,#4F46E5,#7C3AED);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero p{margin:0;max-width:620px;color:var(--ink-2);font-size:17px;line-height:1.6}
+  .meta-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+  .meta-row span{font-size:11.5px;color:var(--muted);border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px}
+
+  /* shell */
+  .shell{max-width:1080px;margin:0 auto;padding:0 28px 90px;display:grid;grid-template-columns:196px 1fr;gap:64px;align-items:start}
+  .toc{position:sticky;top:26px;padding:34px 0;font-size:13px}
+  .toc .h{font-size:10.5px;font-weight:750;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:12px}
+  .toc a{display:block;padding:6px 0;color:var(--muted);text-decoration:none;transition:color .15s}
+  .toc a:hover{color:var(--ink)}
+  .toc a span{display:inline-block;width:22px;color:var(--faint);font-variant-numeric:tabular-nums}
+  .content{min-width:0;padding-top:34px}
+  section{padding:40px 0 44px;border-bottom:1px solid var(--line)}
+  section:last-child{border-bottom:0}
+  .sec-head{display:flex;align-items:baseline;gap:12px;margin-bottom:8px}
+  .sec-num{font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:600}
+  h2{margin:0 0 6px;font-size:26px;letter-spacing:-.028em;font-weight:700}
+  .sec-sub{margin:0 0 26px;color:var(--muted);font-size:14px;max-width:620px}
+  h3{margin:30px 0 12px;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);font-weight:700}
+  h3:first-child{margin-top:0}
+
+  /* generic cards */
+  .card{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .caption{font-size:12px;color:var(--muted);margin-top:10px}
+  .note{background:var(--accent-soft);border:1px solid #DDE4FF;border-radius:var(--r-md);padding:14px 16px;font-size:13.5px;color:var(--accent-ink);margin-top:16px}
+
+  /* logo tiles */
+  .tile{border:1px solid var(--line);border-radius:var(--r-lg);display:grid;place-items:center;min-height:150px;background:var(--white)}
+  .tile.dark{background:#131316;border-color:#131316}
+  .tile.warm{background:#F4F1EA;border-color:#E8E2D6}
+  .tile svg{width:72px;height:72px}
+  .tile-label{display:flex;align-items:center;justify-content:space-between;margin-top:9px;font-size:12px;color:var(--muted)}
+  .tile-label b{font-weight:600;color:var(--ink-2)}
+
+  /* clear space */
+  .space-wrap{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);padding:34px;display:grid;place-items:center}
+  .space-box{position:relative;padding:44px;border:1px dashed #C7D2FE;border-radius:14px}
+  .space-box::before,.space-box::after{content:"x";position:absolute;font-family:var(--mono);font-size:10px;color:var(--accent)}
+  .space-box::before{top:14px;left:50%;transform:translateX(-50%)}
+  .space-box::after{bottom:14px;left:50%;transform:translateX(-50%)}
+  .space-box svg{display:block;width:80px;height:80px}
+  .space-tick{position:absolute;inset:0;border-radius:14px}
+
+  /* swatches */
+  .swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .swatch{border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:#fff}
+  .swatch .chip{height:64px}
+  .swatch .info{padding:9px 11px}
+  .swatch .nm{font-size:12.5px;font-weight:600;display:block}
+  .swatch .hx{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .tokens{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:14px}
+  .tokens th{text-align:left;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding:0 0 9px;border-bottom:1px solid var(--line);font-weight:700}
+  .tokens td{padding:10px 0;border-bottom:1px solid var(--line-2);vertical-align:middle}
+  .tokens tr:last-child td{border-bottom:0}
+  .dot{display:inline-block;width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.08);vertical-align:-2px;margin-right:8px}
+
+  /* type specimens */
+  .spec{border:1px solid var(--line);border-radius:var(--r-md);background:#fff;padding:16px 18px;margin-bottom:9px;display:flex;align-items:baseline;gap:18px}
+  .spec .sample{flex:1;min-width:0;color:var(--ink)}
+  .spec .code{font-family:var(--mono);font-size:10.5px;color:var(--faint);white-space:nowrap}
+  .s-display{font-size:38px;line-height:1.05;letter-spacing:-.04em;font-weight:700}
+  .s-h1{font-size:30px;line-height:1.12;letter-spacing:-.03em;font-weight:700}
+  .s-h2{font-size:21px;line-height:1.25;letter-spacing:-.02em;font-weight:650}
+  .s-body{font-size:15px;line-height:1.6}
+  .s-small{font-size:13px;line-height:1.5;color:var(--ink-2)}
+  .s-micro{font-size:10.5px;line-height:1.4;letter-spacing:.12em;text-transform:uppercase;font-weight:750;color:var(--muted)}
+
+  /* voice table */
+  .voice{width:100%;border-collapse:collapse;font-size:13.5px}
+  .voice th{text-align:left;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding:0 0 10px;border-bottom:1px solid var(--line);font-weight:700}
+  .voice td{padding:13px 12px 13px 0;border-bottom:1px solid var(--line-2);vertical-align:top}
+  .voice td:last-child{color:var(--ink)}
+  .voice .no{color:var(--muted);text-decoration:line-through;text-decoration-color:#D4D4D8}
+  .pill-ok{display:inline-block;font-size:10px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;color:var(--ok);background:var(--ok-soft);border:1px solid #A7F3D0;border-radius:5px;padding:2px 6px;margin-right:8px;vertical-align:1px}
+  .pill-no{display:inline-block;font-size:10px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;color:var(--danger);background:#FEF2F2;border:1px solid #FECACA;border-radius:5px;padding:2px 6px;margin-right:8px;vertical-align:1px}
+
+  /* do dont */
+  .dd{border:1px solid var(--line);border-radius:var(--r-md);padding:16px;background:#fff}
+  .dd .badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:12px}
+  .dd.do .badge{color:var(--ok)}
+  .dd.dont .badge{color:var(--danger)}
+  .dd p{margin:0;font-size:12.8px;color:var(--muted);line-height:1.5}
+  .demo{height:70px;display:grid;place-items:center;background:var(--line-2);border-radius:8px;margin-bottom:12px;overflow:hidden}
+
+  /* icons */
+  .icon-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .icon-box{background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:16px;display:grid;place-items:center;gap:8px}
+  .icon-box svg{width:22px;height:22px;color:var(--ink-2)}
+  .icon-box span{font-size:11px;color:var(--muted)}
+
+  /* motion */
+  .motion{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .motion .card{padding:16px}
+  .motion .val{font-family:var(--mono);font-size:20px;font-weight:600;letter-spacing:-.02em}
+  .motion .lbl{font-size:12px;color:var(--muted);margin-top:4px}
+
+  ul.clean{margin:0;padding-left:18px}
+  ul.clean li{margin-bottom:8px;color:var(--ink-2);font-size:14px}
+  ul.clean li b{color:var(--ink);font-weight:600}
+
+  .foot{max-width:1080px;margin:0 auto;padding:0 28px 70px;display:flex;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:22px}
+  .foot .right{margin-left:auto}
+  .foot a{color:var(--accent-ink);text-decoration:none}
+  .foot a:hover{text-decoration:underline}
+
+  @media (max-width:860px){
+    .shell{grid-template-columns:1fr;gap:0}
+    .toc{position:static;padding:22px 0 0;display:flex;gap:16px;overflow-x:auto;white-space:nowrap;border-bottom:1px solid var(--line);font-size:12.5px}
+    .toc .h{display:none}
+    .toc a{padding:0 0 12px}
+    .toc a span{width:auto;margin-right:4px}
+    .content{padding-top:8px}
+    h1{font-size:36px}
+    .swatches,.grid4{grid-template-columns:1fr 1fr}
+    .grid2,.motion,.icon-row{grid-template-columns:1fr 1fr}
+    .spec{flex-direction:column;gap:4px}
+  }
+  @media (max-width:520px){
+    .hero-in,.shell,.foot{padding-left:18px;padding-right:18px}
+    .swatches,.grid4,.grid2,.motion,.icon-row{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-in">
+    <div class="topline">
+      <span class="tag">Brand guidelines</span>
+      <span class="right">Version 1.0 · October 2026</span>
+    </div>
+
+    <div class="lockup">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M16 12 L32 44 L48 12" fill="none" stroke="#151518" stroke-width="9.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="32" cy="54" r="3" fill="#4F46E5"/>
+      </svg>
+      <div class="lock-text">
+        <div class="name">VADA</div>
+        <div class="sub">Version-Aware Docs Assistant</div>
+      </div>
+    </div>
+
+    <h1>Precision,<br>with a <em>source</em>.</h1>
+    <p>VADA is an internal developer tool that answers questions from product documentation and always shows the document and version behind the answer. The brand should feel like the product: calm, exact, and impossible to misread.</p>
+
+    <div class="meta-row">
+      <span>Internal product</span>
+      <span>Developer audience</span>
+      <span>Monochrome-first</span>
+      <span>No decorative elements</span>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="toc">
+    <div class="h">Contents</div>
+    <a href="#foundation"><span>01</span>Foundation</a>
+    <a href="#logo"><span>02</span>Logo</a>
+    <a href="#color"><span>03</span>Color</a>
+    <a href="#type"><span>04</span>Typography</a>
+    <a href="#voice"><span>05</span>Voice &amp; tone</a>
+    <a href="#icons"><span>06</span>Iconography</a>
+    <a href="#motion"><span>07</span>Motion</a>
+    <a href="#a11y"><span>08</span>Accessibility</a>
+  </aside>
+
+  <main class="content">
+
+    <!-- 01 -->
+    <section id="foundation">
+      <div class="sec-head"><span class="sec-num">01</span><h2>Foundation</h2></div>
+      <p class="sec-sub">What the brand stands for, before any visual decision is made.</p>
+
+      <div class="grid2">
+        <div class="card">
+          <h3>Positioning</h3>
+          <p style="margin:0;font-size:14px;color:var(--ink-2)">A documentation answer engine for developers. It retrieves the exact passage and cites it. It does not speculate.</p>
+        </div>
+        <div class="card">
+          <h3>Promise</h3>
+          <p style="margin:0;font-size:14px;color:var(--ink-2)">Every answer can be verified in one click. Trust comes from traceability, not from confidence of tone.</p>
+        </div>
+      </div>
+
+      <h3>Personality</h3>
+      <div class="grid4">
+        <div class="card"><b>Precise</b><p class="caption" style="margin:6px 0 0">Version numbers, field names, exact errors. Never approximate.</p></div>
+        <div class="card"><b>Calm</b><p class="caption" style="margin:6px 0 0">No urgency, no exclamation marks, no celebration of routine actions.</p></div>
+        <div class="card"><b>Honest</b><p class="caption" style="margin:6px 0 0">Says "not found" without apology or padding.</p></div>
+        <div class="card"><b>Quietly technical</b><p class="caption" style="margin:6px 0 0">Speaks the reader's language. No marketing voice inside the product.</p></div>
+      </div>
+
+      <div class="note"><b>Design principle:</b> when in doubt, remove. The interface should look like a tool, not a landing page.</div>
+    </section>
+
+    <!-- 02 -->
+    <section id="logo">
+      <div class="sec-head"><span class="sec-num">02</span><h2>Logo</h2></div>
+      <p class="sec-sub">A geometric V with a single dot beneath it. The V is the name; the dot is the citation mark — every answer ends with its source.</p>
+
+      <h3>Primary and alternate marks</h3>
+      <div class="grid4">
+        <div>
+          <div class="tile">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <path d="M16 12 L32 44 L48 12" fill="none" stroke="#151518" stroke-width="9.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="32" cy="54" r="3" fill="#4F46E5"/>
+            </svg>
+          </div>
+          <div class="tile-label"><b>Primary</b><span>Ink + Indigo</span></div>
+        </div>
+        <div>
+          <div class="tile">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <defs><linearGradient id="bg1" x1="14" y1="8" x2="52" y2="58" gradientUnits="userSpaceOnUse"><stop stop-color="#818CF8"/><stop offset=".45" stop-color="#4F46E5"/><stop offset="1" stop-color="#312E81"/></linearGradient></defs>
+              <path d="M16 12 L32 44 L48 12" fill="none" stroke="url(#bg1)" stroke-width="9.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="32" cy="54" r="3" fill="url(#bg1)"/>
+            </svg>
+          </div>
+          <div class="tile-label"><b>Gradient</b><span>Marketing only</span></div>
+        </div>
+        <div>
+          <div class="tile">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <path d="M16 12 L32 44 L48 12" fill="none" stroke="#151518" stroke-width="9.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="32" cy="54" r="3" fill="#151518"/>
+            </svg>
+          </div>
+          <div class="tile-label"><b>Monochrome</b><span>Single-colour print</span></div>
+        </div>
+        <div>
+          <div class="tile dark">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <path d="M16 12 L32 44 L48 12" fill="none" stroke="#FFFFFF" stroke-width="9.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="32" cy="54" r="3" fill="#818CF8"/>
+            </svg>
+          </div>
+          <div class="tile-label"><b>Inverse</b><span>Dark surfaces</span></div>
+        </div>
+      </div>
+
+      <h3>Clear space</h3>
+      <div class="space-wrap">
+        <div class="space-box">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <path d="M16 12 L32 44 L48 12" fill="none" stroke="#151518" stroke-width="9.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="32" cy="54" r="3" fill="#4F46E5"/>
+          </svg>
+        </div>
+      </div>
+      <p class="caption">Clear space on all sides equals <code>x</code>, where <code>x</code> is the diameter of the dot × 4. Nothing — text, borders, or other logos — enters this zone.</p>
+
+      <h3>Minimum size</h3>
+      <div class="grid4">
+        <div class="card" style="display:grid;place-items:center;min-height:92px">
+          <svg viewBox="0 0 64 64" style="width:20px;height:20px" aria-hidden="true"><path d="M16 12 L32 44 L48 12" fill="none" stroke="#151518" stroke-width="9.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="32" cy="54" r="3" fill="#4F46E5"/></svg>
+          <span class="caption" style="margin-top:8px">20 px · digital</span>
+        </div>
+        <div class="card" style="display:grid;place-items:center;min-height:92px">
+          <svg viewBox="0 0 64 64" style="width:32px;height:32px" aria-hidden="true"><path d="M16 12 L32 44 L48 12" fill="none" stroke="#151518" stroke-width="9.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="32" cy="54" r="3" fill="#4F46E5"/></svg>
+          <span class="caption" style="margin-top:8px">32 px · app icon</span>
+        </div>
+        <div class="card" style="display:grid;place-items:center;min-height:92px">
+          <svg viewBox="0 0 260 64" style="width:150px;height:37px" aria-hidden="true"><path d="M16 12 L32 44 L48 12" fill="none" stroke="#151518" stroke-width="9.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="32" cy="54" r="3" fill="#4F46E5"/><text x="68" y="38" font-family="ui-sans-serif,system-ui,Arial,sans-serif" font-size="27" font-weight="700" letter-spacing="1.4" fill="#151518">VADA</text></svg>
+          <span class="caption" style="margin-top:8px">150 px · lockup</span>
+        </div>
+        <div class="card" style="display:grid;place-items:center;min-height:92px">
+          <svg viewBox="0 0 260 64" style="width:200px;height:49px" aria-hidden="true"><path d="M16 12 L32 44 L48 12" fill="none" stroke="#151518" stroke-width="9.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="32" cy="54" r="3" fill="#4F46E5"/><text x="68" y="38" font-family="ui-sans-serif,system-ui,Arial,sans-serif" font-size="27" font-weight="700" letter-spacing="1.4" fill="#151518">VADA</text><text x="70" y="54" font-family="ui-sans-serif,system-ui,Arial,sans-serif" font-size="9.5" font-weight="500" letter-spacing=".6" fill="#71717A">VERSION-AWARE DOCS ASSISTANT</text></svg>
+          <span class="caption" style="margin-top:8px">200 px · full lockup</span>
+        </div>
+      </div>
+
+      <h3>Usage</h3>
+      <div class="grid2">
+        <div class="dd do">
+          <div class="badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>Do</div>
+          <div class="demo"><svg viewBox="0 0 64 64" style="width:44px;height:44px" aria-hidden="true"><path d="M16 12 L32 44 L48 12" fill="none" stroke="#151518" stroke-width="9.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="32" cy="54" r="3" fill="#4F46E5"/></svg></div>
+          <p>Use the primary pair on light surfaces. Keep the dot indigo; keep the V ink.</p>
+        </div>
+        <div class="dd do">
+          <div class="badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>Do</div>
+          <div class="demo" style="background:#131316"><svg viewBox="0 0 64 64" style="width:44px;height:44px" aria-hidden="true"><path d="M16 12 L32 44 L48 12" fill="none" stroke="#FFFFFF" stroke-width="9.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="32" cy="54" r="3" fill="#818CF8"/></svg></div>
+          <p>On dark surfaces, switch to the inverse mark and allow the dot to brighten.</p>
+        </div>
+        <div class="dd dont">
+          <div class="badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>Don't</div>
+          <div class="demo"><svg viewBox="0 0 64 64" style="width:44px;height:52px;transform:scaleX(1.5)" aria-hidden="true"><path d="M16 12 L32 44 L48 12" fill="none" stroke="#151518" stroke-width="9.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="32" cy="54" r="3" fill="#4F46E5"/></svg></div>
+          <p>Never stretch, squash, rotate, or outline the mark.</p>
+        </div>
+        <div class="dd dont">
+          <div class="badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>Don't</div>
+          <div class="demo"><svg viewBox="0 0 64 64" style="width:44px;height:44px" aria-hidden="true"><path d="M16 12 L32 44 L48 12" fill="none" stroke="#059669" stroke-width="9.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="32" cy="54" r="3" fill="#B45309"/></svg></div>
+          <p>Do not recolour the mark outside the approved palette.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 -->
+    <section id="color">
+      <div class="sec-head"><span class="sec-num">03</span><h2>Color</h2></div>
+      <p class="sec-sub">Neutral by default, with a single indigo accent reserved for action and citation. Colour is information, not decoration.</p>
+
+      <h3>Core</h3>
+      <div class="swatches">
+        <div class="swatch"><div class="chip" style="background:#151518"></div><div class="info"><span class="nm">Ink</span><span class="hx">#151518</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#3F3F46"></div><div class="info"><span class="nm">Ink 2</span><span class="hx">#3F3F46</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#71717A"></div><div class="info"><span class="nm">Muted</span><span class="hx">#71717A</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#E7E5E4"></div><div class="info"><span class="nm">Line</span><span class="hx">#E7E5E4</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#FBFBFA"></div><div class="info"><span class="nm">Paper</span><span class="hx">#FBFBFA</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#FFFFFF"></div><div class="info"><span class="nm">Surface</span><span class="hx">#FFFFFF</span></div></div>
+      </div>
+
+      <h3>Accent</h3>
+      <div class="swatches">
+        <div class="swatch"><div class="chip" style="background:#4F46E5"></div><div class="info"><span class="nm">Indigo 600</span><span class="hx">#4F46E5</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#4338CA"></div><div class="info"><span class="nm">Indigo 700</span><span class="hx">#4338CA</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#A5B4FC"></div><div class="info"><span class="nm">Indigo 300</span><span class="hx">#A5B4FC</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#EEF2FF"></div><div class="info"><span class="nm">Indigo 100</span><span class="hx">#EEF2FF</span></div></div>
+      </div>
+
+      <h3>Semantic</h3>
+      <div class="swatches">
+        <div class="swatch"><div class="chip" style="background:#047857"></div><div class="info"><span class="nm">Success</span><span class="hx">#047857</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#ECFDF5"></div><div class="info"><span class="nm">Success soft</span><span class="hx">#ECFDF5</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#B45309"></div><div class="info"><span class="nm">Warning</span><span class="hx">#B45309</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#FFFBEB"></div><div class="info"><span class="nm">Warning soft</span><span class="hx">#FFFBEB</span></div></div>
+      </div>
+
+      <h3>Rules</h3>
+      <ul class="clean">
+        <li><b>70 / 20 / 10.</b> Roughly 70% neutral surface, 20% ink text, 10% accent. If indigo covers more than a tenth of a screen, remove some.</li>
+        <li><b>One accent.</b> Indigo means "interactive" or "cited". It never decorates a heading.</li>
+        <li><b>Amber is a warning only.</b> It appears for the not-found state and data-quality notices, nowhere else.</li>
+        <li><b>Never rely on colour alone.</b> Pair every state with a label or icon.</li>
+      </ul>
+    </section>
+
+    <!-- 04 -->
+    <section id="type">
+      <div class="sec-head"><span class="sec-num">04</span><h2>Typography</h2></div>
+      <p class="sec-sub">The system UI stack. No external font files — it loads instantly, renders consistently, and keeps the product offline-safe.</p>
+
+      <h3>Scale</h3>
+      <div class="spec"><div class="sample s-display">Ask the docs.</div><span class="code">46 / 1.08 / 700 / −0.042em</span></div>
+      <div class="spec"><div class="sample s-h1">Create user</div><span class="code">32 / 1.15 / 700 / −0.03em</span></div>
+      <div class="spec"><div class="sample s-h2">Renaming user fields</div><span class="code">22 / 1.25 / 650 / −0.02em</span></div>
+      <div class="spec"><div class="sample s-body">In v3, user_name was renamed to display_name. Requests that still send the old field return 422.</div><span class="code">15 / 1.6 / 400</span></div>
+      <div class="spec"><div class="sample s-small">Updated 12 Oct 2026 · Request body</div><span class="code">13 / 1.5 / 400</span></div>
+      <div class="spec"><div class="sample s-micro">Sources</div><span class="code">11 / 1.4 / 750 / 0.12em</span></div>
+
+      <h3>Rules</h3>
+      <ul class="clean">
+        <li><b>One typeface.</b> Weight and spacing create hierarchy, not a second font.</li>
+        <li><b>Headings tighten, body loosens.</b> Negative tracking above 22 px, normal tracking at body size.</li>
+        <li><b>Code is always monospace</b> and never uses the accent colour.</li>
+        <li><b>Line length</b> stays under 70 characters for prose.</li>
+      </ul>
+    </section>
+
+    <!-- 05 -->
+    <section id="voice">
+      <div class="sec-head"><span class="sec-num">05</span><h2>Voice &amp; tone</h2></div>
+      <p class="sec-sub">The product speaks like a senior engineer: brief, factual, and never defensive.</p>
+
+      <table class="voice">
+        <thead><tr><th style="width:46%">Instead of</th><th>Say</th></tr></thead>
+        <tbody>
+          <tr><td class="no">"Sorry, I couldn't find anything for that."</td><td><span class="pill-ok">Say</span>No reliable answer in the docs.</td></tr>
+          <tr><td class="no">"I think you should probably use display_name."</td><td><span class="pill-ok">Say</span>v3 requires <code>display_name</code>.</td></tr>
+          <tr><td class="no">"Great question! Here's what I found 🎉"</td><td><span class="pill-ok">Say</span>Based on 3 sources in v3:</td></tr>
+          <tr><td class="no">"Oops! Something went wrong."</td><td><span class="pill-ok">Say</span>Search is unavailable. Try again.</td></tr>
+          <tr><td class="no">"As an AI language model…"</td><td><span class="pill-no">Never</span>Remove the sentence entirely.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="note"><b>The test:</b> if a sentence would survive being pasted into a changelog, it is on-brand. If it sounds like a chatbot, rewrite it.</div>
+    </section>
+
+    <!-- 06 -->
+    <section id="icons">
+      <div class="sec-head"><span class="sec-num">06</span><h2>Iconography</h2></div>
+      <p class="sec-sub">24 px grid, 1.9 stroke, round caps and joins. Icons inherit colour and never appear filled.</p>
+      <div class="icon-row">
+        <div class="icon-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v4a2 2 0 0 1-2 2 2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h1"/><path d="M16 3h1a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2 2 2 0 0 0-2 2v4a2 2 0 0 1-2 2h-1"/></svg>
+          <span>API reference</span>
+        </div>
+        <div class="icon-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13l-3-3"/><path d="M20 17H7l3 3"/></svg>
+          <span>Migration</span>
+        </div>
+        <div class="icon-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12"/><path d="M8 12h12"/><path d="M8 18h12"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg>
+          <span>Changelog</span>
+        </div>
+        <div class="icon-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+          <span>Search</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section id="motion">
+      <div class="sec-head"><span class="sec-num">07</span><h2>Motion</h2></div>
+      <p class="sec-sub">Motion explains change; it never entertains. Nothing bounces, nothing overshoots.</p>
+      <div class="motion">
+        <div class="card"><div class="val">120 ms</div><div class="lbl">Hover, focus, colour</div></div>
+        <div class="card"><div class="val">180 ms</div><div class="lbl">Cards, expansion, state</div></div>
+        <div class="card"><div class="val">240 ms</div><div class="lbl">Page-level transitions</div></div>
+      </div>
+      <p class="caption">Easing: <code>cubic-bezier(.2, .7, .3, 1)</code>. Respect <code>prefers-reduced-motion</code> and disable animation entirely when set.</p>
+    </section>
+
+    <!-- 08 -->
+    <section id="a11y">
+      <div class="sec-head"><span class="sec-num">08</span><h2>Accessibility</h2></div>
+      <p class="sec-sub">Requirements, not aspirations. Every screen is reviewed against this list.</p>
+      <ul class="clean">
+        <li><b>Contrast:</b> body text at least 4.5:1, large text at least 3:1. The muted grey on paper passes at 4.6:1.</li>
+        <li><b>Focus:</b> a 2 px indigo ring with 2 px offset on every interactive element. Never remove it.</li>
+        <li><b>Targets:</b> 44 × 44 px minimum on touch.</li>
+        <li><b>Announcements:</b> answers and errors use <code>aria-live="polite"</code>.</li>
+        <li><b>Colour independence:</b> every status has text or an icon beside it.</li>
+        <li><b>Keyboard:</b> every flow completes without a mouse.</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+
+<div class="foot">
+  <span>VADA Brand Guidelines · v1.0</span>
+  <span>Owner: Sri Kishore S</span>
+  <span class="right"><a href="design-system.html">Design system →</a></span>
+</div>
+
+</body>
+</html>
