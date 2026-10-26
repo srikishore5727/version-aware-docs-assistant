@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VADA — Design deliverables</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M16 12 32 44 48 12' fill='none' stroke='%23151518' stroke-width='9.2' stroke-linecap='round' stroke-linejoin='round'/><circle cx='32' cy='54' r='3' fill='%234F46E5'/></svg>">
+<style>
+  :root{--ink:#151518;--ink-2:#3F3F46;--muted:#71717A;--line:#E7E5E4;--paper:#FBFBFA;--accent:#4F46E5;--accent-ink:#3730A3;--accent-soft:#EEF2FF;
+    --font:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(900px 420px at 20% -10%,rgba(99,102,241,.12),transparent 65%)}
+  .wrap{max-width:900px;margin:0 auto;padding:64px 28px 80px}
+  .lock{display:flex;align-items:center;gap:14px;margin-bottom:48px}
+  .lock svg{width:46px;height:46px}
+  .lock .n{font-size:24px;font-weight:750;letter-spacing:.02em}
+  .lock .s{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:4px}
+  h1{margin:0 0 12px;font-size:40px;line-height:1.08;letter-spacing:-.04em}
+  h1 em{font-style:normal;color:var(--accent)}
+  p.lede{margin:0 0 40px;color:var(--ink-2);max-width:600px;font-size:16px;line-height:1.6}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  a.card{display:block;text-decoration:none;background:#fff;border:1px solid var(--line);border-radius:18px;padding:24px;
+    transition:border-color .18s cubic-bezier(.2,.7,.3,1),transform .18s cubic-bezier(.2,.7,.3,1),box-shadow .18s}
+  a.card:hover{border-color:#C7D2FE;transform:translateY(-2px);box-shadow:0 18px 40px -24px rgba(21,21,24,.3)}
+  .k{font-size:10.5px;font-weight:750;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-ink);margin-bottom:10px}
+  .t{font-size:18px;font-weight:650;letter-spacing:-.02em;margin-bottom:5px}
+  .d{font-size:13px;color:var(--muted);line-height:1.5}
+  .arrow{margin-top:16px;font-size:12.5px;font-weight:600;color:var(--accent-ink)}
+  .wide{grid-column:1/-1}
+  .files{margin-top:40px;border-top:1px solid var(--line);padding-top:22px;font-size:12.5px;color:var(--muted);display:flex;gap:18px;flex-wrap:wrap}
+  .files a{color:var(--accent-ink);text-decoration:none}
+  .files a:hover{text-decoration:underline}
+  @media(max-width:640px){.cards{grid-template-columns:1fr}.wrap{padding:40px 18px 60px}h1{font-size:30px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="lock">
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <path d="M16 12 L32 44 L48 12" fill="none" stroke="#151518" stroke-width="9.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="32" cy="54" r="3" fill="#4F46E5"/>
+    </svg>
+    <div><div class="n">VADA</div><div class="s">Design deliverables</div></div>
+  </div>
+
+  <h1>Every answer has a <em>source</em>.</h1>
+  <p class="lede">The complete design package for the Version-Aware Docs Assistant: product mockup, brand guidelines, and design system.</p>
+
+  <div class="cards">
+    <a class="card wide" href="ux-mockup.html">
+      <div class="k">Deliverable 01</div>
+      <div class="t">Product UX mockup</div>
+      <div class="d">Interactive prototype with four states — first run, answered, not found, and loading.</div>
+      <div class="arrow">Open the mockup →</div>
+    </a>
+    <a class="card" href="brand-guidelines.html">
+      <div class="k">Deliverable 02</div>
+      <div class="t">Brand guidelines</div>
+      <div class="d">Logo system, clear space, palette, typography, voice, and accessibility.</div>
+      <div class="arrow">Read guidelines →</div>
+    </a>
+    <a class="card" href="design-system.html">
+      <div class="k">Deliverable 03</div>
+      <div class="t">Design system</div>
+      <div class="d">Tokens and components: actions, inputs, badges, cards, and states.</div>
+      <div class="arrow">View components →</div>
+    </a>
+  </div>
+
+  <div class="files">
+    <span>Logo files:</span>
+    <a href="brand/logo-mark.svg">Primary mark</a>
+    <a href="brand/logo-mark-gradient.svg">Gradient</a>
+    <a href="brand/logo-mark-mono.svg">Monochrome</a>
+    <a href="brand/logo-mark-inverse.svg">Inverse</a>
+    <a href="brand/logo-lockup.svg">Lockup</a>
+  </div>
+</div>
+</body>
+</html>
