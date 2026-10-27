@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="VADA">
+  <defs>
+    <linearGradient id="vada-grad" x1="14" y1="8" x2="52" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#818CF8"/>
+      <stop offset=".45" stop-color="#4F46E5"/>
+      <stop offset="1" stop-color="#312E81"/>
+    </linearGradient>
+  </defs>
+  <path d="M16 12 L32 44 L48 12" fill="none" stroke="url(#vada-grad)" stroke-width="9.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="32" cy="54" r="3" fill="url(#vada-grad)"/>
+</svg>

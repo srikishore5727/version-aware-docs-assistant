@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VADA — Design System</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M16 12 32 44 48 12' fill='none' stroke='%23151518' stroke-width='9.2' stroke-linecap='round' stroke-linejoin='round'/><circle cx='32' cy='54' r='3' fill='%234F46E5'/></svg>">
+<style>
+  :root{
+    --ink:#151518;--ink-2:#3F3F46;--muted:#71717A;--faint:#A1A1AA;
+    --line:#E7E5E4;--line-2:#F4F4F2;--paper:#FBFBFA;--white:#fff;
+    --accent:#4F46E5;--accent-2:#4338CA;--accent-ink:#3730A3;--accent-soft:#EEF2FF;
+    --ok:#047857;--ok-soft:#ECFDF5;--warn:#B45309;--warn-soft:#FFFBEB;--danger:#B91C1C;
+    --r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:22px;--r-full:999px;
+    --shadow-sm:0 1px 2px rgba(21,21,24,.05);
+    --shadow:0 1px 2px rgba(21,21,24,.04),0 18px 40px -22px rgba(21,21,24,.24);
+    --font:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --ease:cubic-bezier(.2,.7,.3,1);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  code{font-family:var(--mono);font-size:.86em;background:#F4F4F5;border:1px solid #E4E4E7;border-radius:5px;padding:1.5px 5px}
+  a{color:inherit}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .hero{border-bottom:1px solid var(--line);background:radial-gradient(900px 380px at 15% -10%,rgba(99,102,241,.12),transparent 65%),var(--white)}
+  .hero-in{max-width:1080px;margin:0 auto;padding:32px 28px 48px}
+  .topline{display:flex;align-items:center;gap:12px;margin-bottom:56px}
+  .topline .tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .topline .right{margin-left:auto;font-size:12.5px;color:var(--muted)}
+  .brandline{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+  .brandline svg{width:40px;height:40px}
+  .brandline .nm{font-size:22px;font-weight:750;letter-spacing:.02em}
+  .brandline .dv{width:1px;height:18px;background:var(--line)}
+  .brandline .ds{font-size:12.5px;color:var(--muted)}
+  h1{margin:0 0 12px;font-size:50px;line-height:1.04;letter-spacing:-.045em;font-weight:700}
+  h1 em{font-style:normal;background:linear-gradient(90deg,#4F46E5,#7C3AED);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero p{margin:0;max-width:620px;color:var(--ink-2);font-size:16.5px}
+
+  .shell{max-width:1080px;margin:0 auto;padding:0 28px 90px;display:grid;grid-template-columns:196px 1fr;gap:64px;align-items:start}
+  .toc{position:sticky;top:26px;padding:34px 0;font-size:13px}
+  .toc .h{font-size:10.5px;font-weight:750;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:12px}
+  .toc a{display:block;padding:6px 0;color:var(--muted);text-decoration:none;transition:color .15s}
+  .toc a:hover{color:var(--ink)}
+  .toc a span{display:inline-block;width:22px;color:var(--faint);font-variant-numeric:tabular-nums}
+  .content{min-width:0;padding-top:34px}
+  section{padding:40px 0 46px;border-bottom:1px solid var(--line)}
+  section:last-child{border-bottom:0}
+  .sec-head{display:flex;align-items:baseline;gap:12px;margin-bottom:8px}
+  .sec-num{font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:600}
+  h2{margin:0 0 6px;font-size:26px;letter-spacing:-.028em;font-weight:700}
+  .sec-sub{margin:0 0 26px;color:var(--muted);font-size:14px;max-width:640px}
+  h3{margin:32px 0 12px;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);font-weight:700}
+  h3:first-child{margin-top:0}
+  .caption{font-size:12px;color:var(--muted);margin-top:9px}
+  .note{background:var(--accent-soft);border:1px solid #DDE4FF;border-radius:var(--r-md);padding:13px 16px;font-size:13.2px;color:var(--accent-ink);margin-top:16px}
+
+  .surface{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);padding:22px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .stack{display:grid;gap:10px}
+
+  /* components */
+  .btn{
+    appearance:none;border:0;border-radius:12px;background:var(--accent);color:#fff;
+    font:inherit;font-weight:620;font-size:14.5px;padding:12px 24px;cursor:pointer;
+    box-shadow:0 8px 18px -10px rgba(79,70,229,.95);
+    transition:background .15s var(--ease),transform .06s var(--ease);
+  }
+  .btn:hover{background:var(--accent-2)}
+  .btn:active{transform:translateY(1px)}
+  .btn[disabled]{background:#E4E4E7;color:#A1A1AA;box-shadow:none;cursor:not-allowed}
+  .ghost{
+    appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink-2);
+    font:inherit;font-size:12.5px;font-weight:550;padding:8px 13px;border-radius:8px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;transition:background .15s var(--ease),border-color .15s var(--ease);
+  }
+  .ghost:hover{background:#FAFAF9;border-color:#D4D4D8}
+  .chip{
+    appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink-2);
+    font:inherit;font-size:12.3px;padding:5px 11px;border-radius:999px;cursor:pointer;
+    transition:background .15s var(--ease),border-color .15s var(--ease);
+  }
+  .chip:hover{background:#FAFAF9;border-color:#D4D4D8}
+
+  .input{
+    width:100%;height:52px;border:1px solid var(--line);border-radius:12px;padding:0 16px;
+    font:inherit;font-size:15px;background:#fff;color:var(--ink);
+    transition:border-color .15s var(--ease),box-shadow .15s var(--ease);
+  }
+  .input::placeholder{color:var(--faint)}
+  .input:hover{border-color:#D4D4D8}
+  .input:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,70,229,.12)}
+  .field{display:flex;flex-direction:column;gap:5px;min-width:180px}
+  .field > label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .select{
+    appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink);
+    border-radius:9px;padding:9px 32px 9px 12px;font:inherit;font-size:13.5px;cursor:pointer;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717A' stroke-width='2.5' stroke-linecap='round'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat;background-position:right 11px center;
+  }
+  .select:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,70,229,.12)}
+
+  .pill{font-size:10.5px;font-weight:750;letter-spacing:.09em;text-transform:uppercase;background:var(--accent-soft);color:var(--accent-ink);padding:4px 9px;border-radius:6px;display:inline-block}
+  .confidence{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:550;color:var(--ok);background:var(--ok-soft);border:1px solid #A7F3D0;padding:3px 8px;border-radius:6px}
+  .confidence::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--ok)}
+  .tag{font-size:10.8px;font-weight:620;padding:3px 8px;border-radius:6px;border:1px solid transparent;display:inline-block}
+  .tag-type{background:#F4F4F5;color:var(--ink-2);border-color:#E4E4E7}
+  .tag-ver{background:#fff;color:var(--accent-ink);border-color:#C7D2FE}
+  .tag-current{background:var(--ok-soft);color:var(--ok);border-color:#A7F3D0}
+  .tag-beta{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--accent-ink);background:var(--accent-soft);border:1px solid #DDE4FF;padding:3px 7px;border-radius:5px}
+  .tag-tie{font-size:10.8px;font-weight:620;color:var(--warn);background:#fff;border:1px solid #FDE68A;padding:3px 8px;border-radius:6px}
+
+  .answer{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 22px;box-shadow:var(--shadow-sm)}
+  .answer-head{display:flex;align-items:center;gap:9px;margin-bottom:12px;flex-wrap:wrap}
+  .answer-meta{font-size:12px;color:var(--muted);margin-left:auto}
+  .answer p{margin:0 0 10px;font-size:15.5px;line-height:1.65}
+  .answer p:last-child{margin-bottom:0}
+  .cite{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:5px;margin:0 1px;background:var(--accent-soft);color:var(--accent-ink);font-size:10.5px;font-weight:750;text-decoration:none;vertical-align:2px}
+
+  .source{display:flex;gap:14px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .src-icon{width:32px;height:32px;flex:none;border-radius:9px;display:grid;place-items:center}
+  .src-icon svg{width:16px;height:16px}
+  .ic-api{background:#EEF2FF;color:#4338CA}
+  .ic-mig{background:#ECFDF5;color:#047857}
+  .ic-log{background:#FFF7ED;color:#C2410C}
+  .src-body{min-width:0;flex:1}
+  .source-top{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:8px}
+  .score{margin-left:auto;font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:7px;white-space:nowrap}
+  .meter{width:42px;height:4px;border-radius:2px;background:#E4E4E7;overflow:hidden}
+  .meter i{display:block;height:100%;background:var(--accent);border-radius:2px}
+  .source h4{margin:0 0 4px;font-size:14.6px;font-weight:640}
+  .source p{margin:0;color:var(--ink-2);font-size:13.4px;line-height:1.55}
+  .source-foot{display:flex;align-items:center;gap:10px;margin-top:9px;font-size:11.8px;color:var(--muted)}
+  .source-foot a{margin-left:auto;text-decoration:none;color:var(--accent-ink);font-weight:580}
+
+  .notice{background:var(--warn-soft);border:1px solid #FDE68A;border-left:3px solid #D97706;border-radius:14px;padding:18px 20px}
+  .notice h4{margin:0 0 6px;font-size:15px;font-weight:660;color:#7C2D12}
+  .notice p{margin:0;color:#78350F;font-size:13.6px;line-height:1.55}
+  .notice .hint{margin-top:9px;font-size:12.4px;color:#92400E}
+
+  .skel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 22px}
+  .skel-line{height:12px;border-radius:6px;margin-bottom:10px;background:linear-gradient(90deg,#F1F0EF 25%,#E7E5E4 37%,#F1F0EF 63%);background-size:400% 100%;animation:shimmer 1.3s ease infinite}
+  .skel-line:last-child{margin-bottom:0}
+  .w90{width:90%}.w75{width:75%}.w50{width:50%}
+  @keyframes shimmer{0%{background-position:100% 50%}100%{background-position:0 50%}}
+
+  .avatar{width:30px;height:30px;border-radius:50%;background:var(--accent-soft);color:var(--accent-ink);display:grid;place-items:center;font-size:11px;font-weight:750;border:1px solid #DDE4FF}
+
+  .spec-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .spec-box{border:1px solid var(--line);border-radius:var(--r-lg);background:#fff;padding:20px}
+  .spec-box .lbl{font-size:10.5px;font-weight:750;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:14px}
+  .spec-box .usage{font-size:12.4px;color:var(--muted);margin-top:14px;line-height:1.5}
+
+  /* spacing / radius / elevation */
+  .bars{display:grid;gap:7px}
+  .bar{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--muted)}
+  .bar .b{height:10px;background:var(--accent-soft);border:1px solid #C7D2FE;border-radius:3px}
+  .bar span{font-family:var(--mono);font-size:10.5px;width:34px;color:var(--faint)}
+
+  .radii{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  .radii .r{height:60px;background:#fff;border:1px solid var(--line);display:grid;place-items:center;font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+  .elev{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .elev .e{height:76px;background:#fff;border:1px solid var(--line);border-radius:12px;display:grid;place-items:center;font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+  .e1{box-shadow:var(--shadow-sm)}
+  .e2{box-shadow:0 8px 22px -16px rgba(21,21,24,.4)}
+  .e3{box-shadow:var(--shadow)}
+
+  .tokens{width:100%;border-collapse:collapse;font-size:13.4px}
+  .tokens th{text-align:left;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding:0 0 9px;border-bottom:1px solid var(--line);font-weight:700}
+  .tokens td{padding:9px 0;border-bottom:1px solid var(--line-2);vertical-align:middle}
+  .tokens tr:last-child td{border-bottom:0}
+  .dot{display:inline-block;width:13px;height:13px;border-radius:4px;border:1px solid rgba(0,0,0,.08);vertical-align:-2px;margin-right:8px}
+  .mono{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+
+  ul.clean{margin:0;padding-left:18px}
+  ul.clean li{margin-bottom:8px;color:var(--ink-2);font-size:14px}
+  ul.clean li b{color:var(--ink)}
+
+  .foot{max-width:1080px;margin:0 auto;padding:22px 28px 70px;display:flex;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line)}
+  .foot .right{margin-left:auto}
+  .foot a{color:var(--accent-ink);text-decoration:none}
+  .foot a:hover{text-decoration:underline}
+
+  @media (max-width:860px){
+    .shell{grid-template-columns:1fr;gap:0}
+    .toc{position:static;padding:22px 0 0;display:flex;gap:16px;overflow-x:auto;white-space:nowrap;border-bottom:1px solid var(--line);font-size:12.5px}
+    .toc .h{display:none}
+    .toc a{padding:0 0 12px}
+    .toc a span{width:auto;margin-right:4px}
+    .content{padding-top:8px}
+    h1{font-size:36px}
+    .spec-row,.elev{grid-template-columns:1fr}
+    .radii{grid-template-columns:repeat(3,1fr)}
+  }
+  @media (max-width:520px){
+    .hero-in,.shell,.foot{padding-left:18px;padding-right:18px}
+    .radii{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-in">
+    <div class="topline">
+      <span class="tag">Design system</span>
+      <span class="right">Version 1.0 · October 2026</span>
+    </div>
+
+    <div class="brandline">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M16 12 L32 44 L48 12" fill="none" stroke="#151518" stroke-width="9.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="32" cy="54" r="3" fill="#4F46E5"/>
+      </svg>
+      <span class="nm">VADA</span>
+      <span class="dv"></span>
+      <span class="ds">Design system</span>
+    </div>
+
+    <h1>The parts,<br>and the rules for <em>using them</em>.</h1>
+    <p>Foundations, tokens, and components for the Version-Aware Docs Assistant. Every value here is the value shipped in the product — this page is the single source of truth.</p>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="toc">
+    <div class="h">Contents</div>
+    <a href="#tokens"><span>01</span>Color tokens</a>
+    <a href="#type"><span>02</span>Typography</a>
+    <a href="#space"><span>03</span>Spacing &amp; radius</a>
+    <a href="#elevation"><span>04</span>Elevation</a>
+    <a href="#actions"><span>05</span>Actions</a>
+    <a href="#inputs"><span>06</span>Inputs</a>
+    <a href="#badges"><span>07</span>Badges</a>
+    <a href="#cards"><span>08</span>Cards</a>
+    <a href="#states"><span>09</span>States</a>
+    <a href="#a11y"><span>10</span>Accessibility</a>
+  </aside>
+
+  <main class="content">
+
+    <!-- 01 -->
+    <section id="tokens">
+      <div class="sec-head"><span class="sec-num">01</span><h2>Color tokens</h2></div>
+      <p class="sec-sub">Use tokens, never raw hex values in components. The token name describes intent, not appearance.</p>
+
+      <table class="tokens">
+        <thead><tr><th style="width:22%">Token</th><th style="width:22%">Value</th><th>Use</th></tr></thead>
+        <tbody>
+          <tr><td><span class="dot" style="background:#151518"></span><code>--ink</code></td><td class="mono">#151518</td><td>Primary text, logo</td></tr>
+          <tr><td><span class="dot" style="background:#3F3F46"></span><code>--ink-2</code></td><td class="mono">#3F3F46</td><td>Secondary text, body copy</td></tr>
+          <tr><td><span class="dot" style="background:#71717A"></span><code>--muted</code></td><td class="mono">#71717A</td><td>Metadata, captions</td></tr>
+          <tr><td><span class="dot" style="background:#E7E5E4"></span><code>--line</code></td><td class="mono">#E7E5E4</td><td>Borders, dividers</td></tr>
+          <tr><td><span class="dot" style="background:#FBFBFA"></span><code>--paper</code></td><td class="mono">#FBFBFA</td><td>Page background</td></tr>
+          <tr><td><span class="dot" style="background:#FFFFFF"></span><code>--surface</code></td><td class="mono">#FFFFFF</td><td>Cards, inputs</td></tr>
+          <tr><td><span class="dot" style="background:#4F46E5"></span><code>--accent</code></td><td class="mono">#4F46E5</td><td>Primary action, citation</td></tr>
+          <tr><td><span class="dot" style="background:#4338CA"></span><code>--accent-2</code></td><td class="mono">#4338CA</td><td>Hover state</td></tr>
+          <tr><td><span class="dot" style="background:#EEF2FF"></span><code>--accent-soft</code></td><td class="mono">#EEF2FF</td><td>Citation chips, selected</td></tr>
+          <tr><td><span class="dot" style="background:#047857"></span><code>--ok</code></td><td class="mono">#047857</td><td>Current doc, confidence</td></tr>
+          <tr><td><span class="dot" style="background:#B45309"></span><code>--warn</code></td><td class="mono">#B45309</td><td>Not-found, low confidence</td></tr>
+        </tbody>
+      </table>
+
+      <div class="note">Accent appears on roughly 10% of a screen. If it is used for decoration, it is being used incorrectly.</div>
+    </section>
+
+    <!-- 02 -->
+    <section id="type">
+      <div class="sec-head"><span class="sec-num">02</span><h2>Typography</h2></div>
+      <p class="sec-sub">Six roles cover the entire product. No additional sizes are permitted.</p>
+
+      <table class="tokens">
+        <thead><tr><th style="width:22%">Role</th><th style="width:30%">Spec</th><th>Usage</th></tr></thead>
+        <tbody>
+          <tr><td><b>Display</b></td><td class="mono">46 / 1.08 / 700 / −.042em</td><td>Page hero only</td></tr>
+          <tr><td><b>Heading 1</b></td><td class="mono">32 / 1.15 / 700 / −.03em</td><td>Section titles</td></tr>
+          <tr><td><b>Heading 2</b></td><td class="mono">22 / 1.25 / 650 / −.02em</td><td>Card titles</td></tr>
+          <tr><td><b>Body</b></td><td class="mono">15 / 1.6 / 400</td><td>Answers, prose</td></tr>
+          <tr><td><b>Small</b></td><td class="mono">13 / 1.5 / 400</td><td>Metadata, captions</td></tr>
+          <tr><td><b>Micro</b></td><td class="mono">11 / 1.4 / 750 / +.12em caps</td><td>Section labels</td></tr>
+        </tbody>
+      </table>
+
+      <p class="caption">Family: <code>ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial</code>. Code: <code>ui-monospace, SFMono-Regular, Menlo, Consolas</code>.</p>
+    </section>
+
+    <!-- 03 -->
+    <section id="space">
+      <div class="sec-head"><span class="sec-num">03</span><h2>Spacing &amp; radius</h2></div>
+      <p class="sec-sub">A 4 px base scale. Components use the smallest step that separates, never more.</p>
+
+      <div class="spec-row">
+        <div class="spec-box">
+          <div class="lbl">Spacing scale</div>
+          <div class="bars">
+            <div class="bar"><span>4</span><div class="b" style="width:4px"></div></div>
+            <div class="bar"><span>8</span><div class="b" style="width:8px"></div></div>
+            <div class="bar"><span>12</span><div class="b" style="width:12px"></div></div>
+            <div class="bar"><span>16</span><div class="b" style="width:16px"></div></div>
+            <div class="bar"><span>20</span><div class="b" style="width:20px"></div></div>
+            <div class="bar"><span>24</span><div class="b" style="width:24px"></div></div>
+            <div class="bar"><span>32</span><div class="b" style="width:32px"></div></div>
+            <div class="bar"><span>40</span><div class="b" style="width:40px"></div></div>
+            <div class="bar"><span>56</span><div class="b" style="width:56px"></div></div>
+          </div>
+          <p class="usage">Card padding 18–24. Section gap 26–40. Never invent a value between steps.</p>
+        </div>
+
+        <div class="spec-box">
+          <div class="lbl">Radius scale</div>
+          <div class="radii">
+            <div class="r" style="border-radius:6px">6</div>
+            <div class="r" style="border-radius:9px">9</div>
+            <div class="r" style="border-radius:12px">12</div>
+            <div class="r" style="border-radius:16px">16</div>
+            <div class="r" style="border-radius:999px">full</div>
+          </div>
+          <p class="usage">Inputs 12, cards 14–18, chips full. One radius per component, applied to all corners.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 -->
+    <section id="elevation">
+      <div class="sec-head"><span class="sec-num">04</span><h2>Elevation</h2></div>
+      <p class="sec-sub">Three levels only. Depth signals interactivity, not importance.</p>
+      <div class="elev">
+        <div class="e e1">Level 1 · rest</div>
+        <div class="e e2">Level 2 · hover</div>
+        <div class="e e3">Level 3 · overlay</div>
+      </div>
+      <p class="caption">Borders do most of the work. Shadow is a supporting cue, never the primary separator.</p>
+    </section>
+
+    <!-- 05 -->
+    <section id="actions">
+      <div class="sec-head"><span class="sec-num">05</span><h2>Actions</h2></div>
+      <p class="sec-sub">One primary action per screen. Everything else is secondary or a chip.</p>
+
+      <div class="spec-row">
+        <div class="spec-box">
+          <div class="lbl">Primary button</div>
+          <div class="row"><button class="btn">Ask</button><button class="btn" disabled>Disabled</button></div>
+          <p class="usage">One per view. Indigo fill, white label, 12 px radius. Never used for destructive actions.</p>
+        </div>
+        <div class="spec-box">
+          <div class="lbl">Ghost &amp; chip</div>
+          <div class="row">
+            <button class="ghost"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy</button>
+            <button class="chip">What changed in v3.0.0?</button>
+          </div>
+          <p class="usage">Ghost for utility actions inside cards. Chips for suggestions and filters.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section id="inputs">
+      <div class="sec-head"><span class="sec-num">06</span><h2>Inputs</h2></div>
+      <p class="sec-sub">Labels sit above the field. Placeholder text is an example, never the label.</p>
+
+      <div class="surface stack">
+        <div class="row" style="align-items:flex-end">
+          <div class="field">
+            <label for="ds-v">Version</label>
+            <select class="select" id="ds-v"><option>v3 · latest</option><option>v2</option><option>v1</option></select>
+          </div>
+          <div class="field">
+            <label for="ds-t">Document type</label>
+            <select class="select" id="ds-t"><option>All types</option><option>API reference</option><option>Migration guide</option></select>
+          </div>
+        </div>
+        <input class="input" placeholder="Ask anything about the API, migrations, or changelogs…" aria-label="Example question">
+      </div>
+      <p class="caption">Focus ring: 3 px indigo at 12% opacity, plus a solid indigo border. Hover is a grey border shift only.</p>
+    </section>
+
+    <!-- 07 -->
+    <section id="badges">
+      <div class="sec-head"><span class="sec-num">07</span><h2>Badges</h2></div>
+      <p class="sec-sub">Short, factual, and never decorative. Each one encodes a single property.</p>
+
+      <div class="surface">
+        <div class="row">
+          <span class="tag tag-type">API reference</span>
+          <span class="tag tag-ver">v3</span>
+          <span class="tag tag-current">Current</span>
+          <span class="tag tag-tie">Not relevant enough</span>
+          <span class="pill">Answer</span>
+          <span class="confidence">High confidence</span>
+          <span class="tag-beta">Internal beta</span>
+        </div>
+      </div>
+      <p class="caption">Grey = document type. Indigo outline = version. Green = freshness or confidence. Amber = caution. Never encode the same meaning with two colours.</p>
+    </section>
+
+    <!-- 08 -->
+    <section id="cards">
+      <div class="sec-head"><span class="sec-num">08</span><h2>Cards</h2></div>
+      <p class="sec-sub">Four card types carry the product: answer, source, notice, and skeleton.</p>
+
+      <h3>Answer card</h3>
+      <div class="answer">
+        <div class="answer-head">
+          <span class="pill">Answer</span>
+          <span class="confidence">High confidence</span>
+          <span class="answer-meta">3 sources · 1.2 s</span>
+        </div>
+        <p>No. In v3, <code>user_name</code> was renamed to <code>display_name</code>. Requests that still send the old field return <strong>422</strong>.<a class="cite" href="#">1</a><a class="cite" href="#">2</a></p>
+      </div>
+      <p class="caption">The answer never renders without at least one citation chip or the not-found state.</p>
+
+      <h3>Source card</h3>
+      <div class="source">
+        <span class="src-icon ic-api">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v4a2 2 0 0 1-2 2 2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h1"/><path d="M16 3h1a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2 2 2 0 0 0-2 2v4a2 2 0 0 1-2 2h-1"/></svg>
+        </span>
+        <div class="src-body">
+          <div class="source-top">
+            <span class="tag tag-type">API reference</span>
+            <span class="tag tag-ver">v3</span>
+            <span class="tag tag-current">Current</span>
+            <span class="score"><span class="meter"><i style="width:92%"></i></span>0.92</span>
+          </div>
+          <h4>Create user</h4>
+          <p><code>display_name</code> (string, required) — replaces <code>user_name</code>, which was removed in v3.</p>
+          <div class="source-foot"><span>Request body · Updated 12 Oct 2026</span><a href="#">Open in docs ↗</a></div>
+        </div>
+      </div>
+      <p class="caption">Type icon, type tag, version, freshness badge, relevance meter, date, and an escape hatch to the full document.</p>
+
+      <h3>Notice card</h3>
+      <div class="notice">
+        <h4>No reliable answer in the docs</h4>
+        <p>The indexed documentation does not cover Okta SSO. Rather than guess, VADA stops here.</p>
+        <p class="hint">Try rephrasing, widen the version filter, or browse the authentication section.</p>
+      </div>
+      <p class="caption">Amber, left-accented, never red. A documentation gap is a caution, not an error.</p>
+
+      <h3>Skeleton</h3>
+      <div class="skel">
+        <div class="skel-line w50"></div>
+        <div class="skel-line w90"></div>
+        <div class="skel-line w75"></div>
+      </div>
+      <p class="caption">Shimmer runs for a maximum of 1.5 s. After that, show the not-found or error state.</p>
+    </section>
+
+    <!-- 09 -->
+    <section id="states">
+      <div class="sec-head"><span class="sec-num">09</span><h2>States</h2></div>
+      <p class="sec-sub">Every interactive component defines five states before it is considered complete.</p>
+      <table class="tokens">
+        <thead><tr><th style="width:20%">State</th><th>Rule</th></tr></thead>
+        <tbody>
+          <tr><td><b>Rest</b></td><td>1 px <code>--line</code> border, no shadow</td></tr>
+          <tr><td><b>Hover</b></td><td>Border shifts to <code>#D4D4D8</code>; cards lift 1 px</td></tr>
+          <tr><td><b>Focus</b></td><td>2 px indigo ring, 2 px offset — always visible</td></tr>
+          <tr><td><b>Active</b></td><td>Button translates 1 px down; no colour change</td></tr>
+          <tr><td><b>Disabled</b></td><td>Grey fill, muted label, no shadow, <code>cursor: not-allowed</code></td></tr>
+        </tbody>
+      </table>
+      <div class="note">Loading is a sixth state for any data surface: skeleton for under 1.5 s, then a labelled error.</div>
+    </section>
+
+    <!-- 10 -->
+    <section id="a11y">
+      <div class="sec-head"><span class="sec-num">10</span><h2>Accessibility</h2></div>
+      <p class="sec-sub">Checklist applied to every component before merge.</p>
+      <ul class="clean">
+        <li><b>Semantics:</b> real <code>button</code>, <code>a</code>, <code>label</code>, and heading levels. No clickable divs.</li>
+        <li><b>Labels:</b> every input has a visible label or an <code>aria-label</code>.</li>
+        <li><b>Live regions:</b> answer and error containers use <code>aria-live="polite"</code>.</li>
+        <li><b>Contrast:</b> 4.5:1 for text, 3:1 for large text and UI borders.</li>
+        <li><b>Motion:</b> honour <code>prefers-reduced-motion</code>; the skeleton stops shimmering.</li>
+        <li><b>Targets:</b> 44 × 44 px minimum on touch screens.</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+
+<div class="foot">
+  <span>VADA Design System · v1.0</span>
+  <span>Owner: Sri Kishore S</span>
+  <span class="right"><a href="brand-guidelines.html">← Brand guidelines</a></span>
+</div>
+
+</body>
+</html>
