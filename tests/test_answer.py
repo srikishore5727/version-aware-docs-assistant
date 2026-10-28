@@ -22,14 +22,14 @@ from app.search import SearchResult
 CORPUS = Path(__file__).resolve().parents[1] / "corpus"
 
 
-def _chunk(index: int, version: str = "v3") -> SearchResult:
+def _chunk(index: int, version: str = "v3", status: str = "current") -> SearchResult:
     return SearchResult(
         chunk_id=f"doc-{index}::0",
         doc_id=f"doc-{index}",
         title=f"Title {index}",
         doc_type="api-reference",
         version=version,
-        status="current",
+        status=status,
         source_url=f"https://docs.example/{index}",
         last_updated="2026-10-01",
         section="Request body",
@@ -52,6 +52,7 @@ def test_prompt_contains_the_grounding_rules() -> None:
     assert "ONLY the numbered context" in messages[0]["content"]
     assert "NOT_FOUND" in messages[0]["content"]
     assert "Cite every factual sentence" in messages[0]["content"]
+    assert "Prefer documents marked" in messages[0]["content"]
     assert "Question: Which field replaced user_name?" in messages[1]["content"]
 
 
@@ -150,6 +151,55 @@ def test_extractive_answer_needs_chunks() -> None:
 
     assert answer.status == "not_found"
     assert answer.reason == "no_matches"
+
+
+# --- superseded documents -------------------------------------------------
+
+
+def test_superseded_sources_raise_a_notice() -> None:
+    chunks = [_chunk(1, version="v2", status="superseded")]
+
+    answer = generate_answer(
+        "Which field?", chunks, completer=lambda messages: "Use user_name [1]."
+    )
+
+    assert answer.status == "answered"
+    assert answer.notice
+    assert "v2" in answer.notice
+    assert "superseded" in answer.notice
+
+
+def test_current_sources_have_no_notice() -> None:
+    answer = generate_answer(
+        "Which field?", CHUNKS, completer=lambda messages: "Use display_name [1]."
+    )
+
+    assert answer.notice == ""
+
+
+def test_notice_is_in_the_payload() -> None:
+    chunks = [_chunk(1, version="v1", status="superseded")]
+    answer = generate_answer("Which field?", chunks, completer=lambda messages: "Old [1].")
+
+    assert answer.to_dict()["notice"] == answer.notice
+
+
+def test_extractive_fallback_also_warns_about_superseded_sources() -> None:
+    answer = extractive_answer([_chunk(1, version="v2", status="superseded")])
+
+    assert "superseded" in answer.notice
+
+
+def test_two_superseded_versions_are_listed() -> None:
+    from app.answer import superseded_notice
+
+    sources = [
+        {"version": "v1", "status": "superseded"},
+        {"version": "v2", "status": "superseded"},
+        {"version": "v3", "status": "current"},
+    ]
+
+    assert "v1 and v2" in superseded_notice(sources)
 
 
 def test_no_chunks_means_not_found_without_calling_the_model() -> None:

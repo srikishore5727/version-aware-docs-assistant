@@ -23,6 +23,11 @@ from app.vector_store import VectorStore
 RRF_K = 60
 TOP_K_PER_RETRIEVER = 10
 
+# Demotion applied to a retired document after fusion. Small enough that a
+# strongly relevant v2 page still wins a v2 question, large enough to break
+# ties in favour of the version we still support.
+SUPERSEDED_PENALTY = 0.0015
+
 # Versions present in ``corpus/``. Explicit so an unknown filter is a 400 rather
 # than a silent empty result. The index refresh (Day 17) revisits this.
 SUPPORTED_VERSIONS = ("v1", "v2", "v3")
@@ -219,7 +224,11 @@ def _fuse(
     fused = [
         replace(
             results[chunk_id],
-            score=round(scores[chunk_id], 5),
+            score=round(
+                scores[chunk_id]
+                - (SUPERSEDED_PENALTY if results[chunk_id].status == "superseded" else 0.0),
+                6,
+            ),
             matched_by="both" if len(sources[chunk_id]) == 2 else next(iter(sources[chunk_id])),
         )
         for chunk_id in scores

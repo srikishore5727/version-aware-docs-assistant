@@ -1,5 +1,6 @@
 """Tests for embeddings, the Chroma store, and hybrid fusion."""
 
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -144,6 +145,39 @@ def test_fusion_ranks_agreement_first() -> None:
 
 def test_fusion_respects_limit() -> None:
     assert len(_fuse([_result("a::0"), _result("b::0")], [], limit=1)) == 1
+
+
+def test_fusion_demotes_a_superseded_chunk_on_a_tie() -> None:
+    retired = replace(_result("old::0", score=0.0), status="superseded")
+    current_hit = {
+        "chunk_id": "new::0",
+        "text": "text",
+        "metadata": {
+            "doc_id": "new",
+            "title": "T",
+            "doc_type": "api-reference",
+            "version": "v3",
+            "status": "current",
+            "source_url": "u",
+            "last_updated": "d",
+            "section": "s",
+        },
+        "similarity": 0.9,
+    }
+
+    fused = _fuse([retired], [current_hit], limit=5)
+
+    assert [item.chunk_id for item in fused] == ["new::0", "old::0"]
+    assert fused[0].score > fused[1].score
+
+
+def test_a_clearly_relevant_superseded_chunk_can_still_win() -> None:
+    retired = replace(_result("old::0", score=0.0), status="superseded")
+    current_hit = replace(_result("new::0", score=0.0), status="current")
+
+    fused = _fuse([retired, current_hit], [{"chunk_id": "old::0", "text": "t", "metadata": {"doc_id": "old", "title": "T", "doc_type": "x", "version": "v2", "status": "superseded", "source_url": "u", "last_updated": "d", "section": "s"}, "similarity": 0.9}], limit=5)
+
+    assert fused[0].chunk_id == "old::0"
 
 
 # --- end to end -----------------------------------------------------------

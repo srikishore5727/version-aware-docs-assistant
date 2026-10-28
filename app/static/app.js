@@ -200,7 +200,7 @@
     cardBox.appendChild(list);
   }
 
-  function answerPanel(kind, body, meta, footText) {
+  function answerPanel(kind, body, meta, footText, notice) {
     answerBox.className = "answer answer--" + (kind === "answered" ? "ok" : "miss");
     answerBox.textContent = "";
 
@@ -214,6 +214,8 @@
     );
     if (meta) head.appendChild(el("span", "answer__meta", meta));
     answerBox.appendChild(head);
+
+    if (notice) answerBox.appendChild(el("p", "answer__notice", notice));
 
     var paragraph = el("p", "answer__body");
     if (typeof body === "string") {
@@ -267,6 +269,7 @@
       citationText(data.answer),
       [versions, data.mode === "hybrid" ? "hybrid" : "keyword"].filter(Boolean).join(" \u00b7 "),
       (data.model || "extractive") + " \u00b7 every claim is cited",
+      data.notice,
     );
     renderSources(sources);
   }
