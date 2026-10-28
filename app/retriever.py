@@ -17,11 +17,35 @@ from pathlib import Path
 from app.config import Settings, get_settings
 from app.embeddings import EmbeddingProvider, get_embedder
 from app.ingest import load_chunks
-from app.search import SearchResult, reindex, search
+from app.search import QueryError, SearchResult, reindex, search
 from app.vector_store import VectorStore
 
 RRF_K = 60
 TOP_K_PER_RETRIEVER = 10
+
+# Versions present in ``corpus/``. Explicit so an unknown filter is a 400 rather
+# than a silent empty result. The index refresh (Day 17) revisits this.
+SUPPORTED_VERSIONS = ("v1", "v2", "v3")
+
+
+def normalize_version(version: str | None) -> str | None:
+    """Validate and canonicalise a version filter.
+
+    ``None`` and blank strings mean "all versions". Anything else must be one
+    of :data:`SUPPORTED_VERSIONS`; the check is case-insensitive.
+    """
+    if version is None:
+        return None
+
+    cleaned = version.strip().lower()
+    if not cleaned:
+        return None
+
+    if cleaned not in SUPPORTED_VERSIONS:
+        allowed = ", ".join(SUPPORTED_VERSIONS)
+        raise QueryError(f"unknown version '{version}'. Use one of: {allowed}")
+
+    return cleaned
 
 
 def _metadata_for(chunk) -> dict:
@@ -84,11 +108,18 @@ def hybrid_search(
     settings: Settings | None = None,
     store: VectorStore | None = None,
     embedder: EmbeddingProvider | None = None,
+    version: str | None = None,
 ) -> list[SearchResult]:
-    """Return the best chunks from both retrievers, fused by rank."""
-    config = settings or get_settings()
+    """Return the best chunks from both retrievers, fused by rank.
 
-    keyword_hits = search(config.db_path, query, limit=TOP_K_PER_RETRIEVER)
+    ``version`` restricts both retrievers to one API version.
+    """
+    config = settings or get_settings()
+    scope = normalize_version(version)
+
+    keyword_hits = search(
+        config.db_path, query, limit=TOP_K_PER_RETRIEVER, version=scope
+    )
     vector_hits: list[dict] = []
 
     if config.vectors_enabled:
@@ -98,7 +129,9 @@ def hybrid_search(
                 config.embeddings_mode, config.gemini_api_key, config.embedding_model
             )
             vector_hits = store.query(
-                embedder.embed_query(query), n_results=TOP_K_PER_RETRIEVER
+                embedder.embed_query(query),
+                n_results=TOP_K_PER_RETRIEVER,
+                where={"version": scope} if scope else None,
             )
         except Exception:
             # A vector failure must never break search; BM25 still answers.

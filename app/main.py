@@ -14,7 +14,7 @@ from pathlib import Path
 from app import __version__
 from app.answer import generate_answer
 from app.config import get_settings
-from app.retriever import ensure_ready, hybrid_search
+from app.retriever import ensure_ready, hybrid_search, normalize_version
 from app.search import QueryError
 
 APP_NAME = "VADA"
@@ -33,6 +33,9 @@ class SearchRequest(BaseModel):
 
     query: str = Field(description="Natural-language question or keywords")
     limit: int = Field(default=5, ge=1, le=20, description="Number of chunks to return")
+    version: str | None = Field(
+        default=None, description="Restrict results to one API version (v1, v2, v3)"
+    )
 
 
 class AskRequest(BaseModel):
@@ -40,6 +43,9 @@ class AskRequest(BaseModel):
 
     question: str = Field(description="Natural-language question")
     limit: int = Field(default=5, ge=1, le=10, description="Chunks given to the model")
+    version: str | None = Field(
+        default=None, description="Restrict retrieval to one API version (v1, v2, v3)"
+    )
 
 
 @app.get("/health", tags=["system"])
@@ -72,7 +78,10 @@ def search_chunks(payload: SearchRequest) -> dict:
     ensure_ready(settings)
 
     try:
-        results = hybrid_search(payload.query, limit=payload.limit, settings=settings)
+        scope = normalize_version(payload.version)
+        results = hybrid_search(
+            payload.query, limit=payload.limit, settings=settings, version=scope
+        )
     except QueryError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except FileNotFoundError as exc:
@@ -80,6 +89,7 @@ def search_chunks(payload: SearchRequest) -> dict:
 
     return {
         "query": payload.query,
+        "version": scope,
         "mode": "hybrid" if settings.vectors_enabled else "keyword",
         "count": len(results),
         "results": [result.to_dict() for result in results],
@@ -100,7 +110,10 @@ def ask(payload: AskRequest) -> dict:
     ensure_ready(settings)
 
     try:
-        chunks = hybrid_search(payload.question, limit=payload.limit, settings=settings)
+        scope = normalize_version(payload.version)
+        chunks = hybrid_search(
+            payload.question, limit=payload.limit, settings=settings, version=scope
+        )
     except QueryError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except FileNotFoundError as exc:
@@ -110,6 +123,7 @@ def ask(payload: AskRequest) -> dict:
 
     return {
         "question": payload.question,
+        "version": scope,
         "mode": "hybrid" if settings.vectors_enabled else "keyword",
         **answer.to_dict(),
     }

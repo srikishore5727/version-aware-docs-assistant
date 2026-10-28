@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 28 October 2026 - Day 7 complete
+**Last updated:** 28 October 2026 - Day 8 complete
 
 ---
 
@@ -110,8 +110,8 @@ Planned additions: `tests/golden_set.json`, `app/metrics.py`.
 | 5 | Grounded answer generation, `/api/ask` | **Done** |
 | 6 | Search UI with source cards | **Done** |
 | 7 | Answer panel and citation links | **Done** |
-| 8 | Version filter | Next |
-| 9 | Document-type filter | Planned |
+| 8 | Version filter | **Done** |
+| 9 | Document-type filter | Next |
 | 10 | Superseded-document handling | Planned |
 | 11 | Not-found and low-confidence path | Planned |
 | 12 | Golden-set evaluation harness | Planned |
@@ -170,7 +170,7 @@ pytest                          # run tests
 
 ---
 
-## 8. Current state (end of Day 7)
+## 8. Current state (end of Day 8)
 
 - `corpus/` has 12 sample Markdown docs across v1/v2/v3 (v3 `current`, v1/v2
   `superseded`). Ingestion produces 60 chunks with full citation metadata.
@@ -179,69 +179,68 @@ pytest                          # run tests
   - `data/index/chroma/` - Chroma collection, cosine, Gemini embeddings (768d)
 - **Hybrid retrieval** (`app/retriever.py`): Reciprocal Rank Fusion (K=60) of
   both lists. A vector failure silently falls back to BM25.
+- **Version filter** works end to end: `hybrid_search(..., version="v3")`
+  adds `AND version = ?` to FTS5 and `where={"version": ...}` to Chroma.
+  `normalize_version()` is case-insensitive, treats `None`/`""` as "all", and
+  raises `QueryError` for anything outside `SUPPORTED_VERSIONS` (`v1`, `v2`,
+  `v3`) so the API answers `400` instead of an empty list.
 - **Grounded generation** (`app/answer.py`) is live behind `POST /api/ask`.
   Gemini answers only from the numbered context; citations are validated in
   code (`[1]` and grouped `[1, 3]`); one retry, then `not_found`.
-- **Answer UI** at `/`: the page calls `POST /api/ask`, renders an answer panel
-  with `[n]` markers as links, then one source card per citation
-  (`id="source-n"`, `:target` outline). `status: not_found` renders a "Not
-  found" panel with a plain-language reason. A failed ask falls back to
-  `POST /api/search`. `StaticFiles` is mounted last so API routes win; JSON
-  metadata lives at `/api`.
-- `sources[]` from `/api/ask` now includes the chunk `text`, so a citation card
-  can show its evidence without a second request.
+- **Answer UI** at `/`: calls `POST /api/ask`, renders an answer panel with
+  `[n]` links, then one source card per citation (`id="source-n"`, `:target`
+  outline). `not_found` is a calm panel. A failed ask falls back to
+  `/api/search`. A version `<select>` scopes the request and is echoed in the
+  result line.
+- Both API responses now echo `"version"` (the applied scope, or `null`).
 - Config from env + `.env`: `GEMINI_API_KEY`, `VADA_EMBEDDING_MODEL`
   (`gemini-embedding-001`), `VADA_LLM_MODEL` (`gemini-3.1-flash-lite-preview`),
   `VADA_EMBEDDINGS` (`gemini` / `hash` / `off`).
-- 66 tests pass locally (3 scaffold + 10 ingestion + 17 search + 12 hybrid +
-  18 answer + 6 UI). CI forces `VADA_EMBEDDINGS=hash` and a blank key.
+- 78 tests pass locally (12 new filter tests). CI forces `VADA_EMBEDDINGS=hash`
+  and a blank key.
 - **Known gap:** vector search always returns `limit` neighbours, so a nonsense
-  query still retrieves cards. The "not found" state currently comes from the
-  model refusing or from unverifiable citations; Day 11 adds the similarity
-  floor that makes it reachable for pure retrieval misses.
+  query still retrieves cards. Day 11 adds the similarity floor.
 
 **APIs (stable - build on these next):**
 
 ```python
-from app.retriever import build_index, hybrid_search
+from app.retriever import build_index, hybrid_search, normalize_version
 from app.answer import generate_answer
 
-build_index()                                   # rebuild both indexes
-chunks = hybrid_search("how do I paginate users", limit=5)
-answer = generate_answer("how do I paginate users", chunks)   # Answer
+chunks = hybrid_search("how do I paginate users", limit=5, version="v3")
+answer = generate_answer("how do I paginate users", chunks)
 ```
 
 - `SearchResult` fields: `chunk_id, doc_id, title, doc_type, version, status,
   source_url, last_updated, section, text, score, matched_by`
 - `Answer` fields: `status, answer, sources, model, reason`; each source
   carries `index`, the citation metadata, and its `text`.
-- Filters are not implemented yet; Day 8 adds them to `hybrid_search`.
+- `doc_type` is already in every chunk and in the Chroma metadata, so Day 9 is
+  the same two-line filter pattern.
 
 ---
 
-## 9. Next task - Day 8: version filter
+## 9. Next task - Day 9: document-type filter
 
-**Goal:** let the user restrict a question to one API version, end to end: API,
-retrieval, and UI.
+**Goal:** narrow a question to one kind of document - API reference, migration
+guide, or changelog - alone or together with a version.
 
 **Build**
 
-1. `app/search.py`: `search(db_path, query, limit, version=None)` adds
-   `AND c.version = ?` to the SQL when a version is given. Keep the existing
-   call signature working (keyword args only for the new parameter).
-2. `app/retriever.py`: `hybrid_search(..., version=None)` passes it to BM25 and
-   to Chroma as `where={"version": version}`. Validate the value against the
-   known versions (`v1`, `v2`, `v3`) and raise `QueryError` for anything else.
-3. `app/main.py`: `SearchRequest` and `AskRequest` gain
-   `version: str | None = None`; pass it through; echo it in the response.
-4. UI: a labelled `<select id="version">` ("All versions", v3, v2, v1) beside
-   the question box; send `version` only when a value is chosen; the answer
-   meta line names the version scope.
-5. Tests: version filter returns only that version from both retrievers,
-   unknown version -> `400`, unfiltered results unchanged, UI HTML contains the
-   select.
+1. `app/search.py`: extend `search()` with `doc_type: str | None = None`. Do not
+   keep bolting on `if` branches - build the WHERE clause from a list of
+   `(column, value)` pairs and a params list.
+2. `app/retriever.py`: `hybrid_search(..., doc_type=None)`; validate against
+   `SUPPORTED_DOC_TYPES = ("api-reference", "migration-guide", "changelog")`
+   with a `normalize_doc_type()` mirroring `normalize_version()`. Chroma
+   `where` must become `{"$and": [...]}` when both filters are set.
+3. `app/main.py`: `SearchRequest` / `AskRequest` gain `doc_type`; echo it.
+4. UI: a second `<select id="doc-type">` ("All types", API reference, Migration
+   guide, Changelog); send only when chosen; the result line names the scope.
+5. Tests: each filter alone, both together (that the intersection is correct),
+   unknown type -> `400`, UI contains the select.
 
-**Do not** add the doc-type filter (Day 9) or superseded ranking (Day 10).
+**Do not** change ranking for superseded docs yet - that is Day 10.
 
 ---
 
@@ -281,3 +280,4 @@ retrieval, and UI.
 | 5 | 28 Oct 2026 | Grounded answer generation with validated citations (`app/answer.py`, `POST /api/ask`), 60 tests |
 | 6 | 28 Oct 2026 | Search UI with source cards (`app/static/`, `StaticFiles`, `/api` metadata), 65 tests |
 | 7 | 28 Oct 2026 | Answer panel with linked citations (`/api/ask` in the UI, `:target` source cards, retrieval fallback), 66 tests |
+| 8 | 28 Oct 2026 | Version filter across FTS5, Chroma and the UI (`normalize_version`, scoped `/api/search` + `/api/ask`), 78 tests |
