@@ -31,7 +31,9 @@ Rules:
 3. If the context does not contain the answer, reply exactly: NOT_FOUND
 4. Never invent endpoints, fields, status codes, or versions.
 5. State the version you are answering for.
-6. Keep answers under 80 words."""
+6. Keep answers under 80 words.
+7. Prefer documents marked ``current``. If you cite a ``superseded`` document,
+   name its version clearly."""
 
 RETRY_PROMPT = """Your previous answer was rejected: every sentence must end with a
 citation like [1] that refers to one of the numbered context blocks.
@@ -49,6 +51,7 @@ class Answer:
     sources: list[dict] = field(default_factory=list)
     model: str = "extractive"
     reason: str = ""
+    notice: str = ""
 
     def to_dict(self) -> dict:
         return {
@@ -57,6 +60,7 @@ class Answer:
             "sources": self.sources,
             "model": self.model,
             "reason": self.reason,
+            "notice": self.notice,
         }
 
 
@@ -130,6 +134,35 @@ def sources_for(chunks: list[SearchResult], numbers: list[int]) -> list[dict]:
     return sources
 
 
+def superseded_notice(sources: list[dict]) -> str:
+    """Warn when the cited evidence comes from a retired version.
+
+    The model is told to prefer ``current`` documents, but a v2 question
+    legitimately answers from v2. In that case the caller - and the reader -
+    should know the source is superseded.
+    """
+    versions: list[str] = []
+    for source in sources:
+        version = source.get("version", "")
+        if source.get("status") == "superseded" and version and version not in versions:
+            versions.append(version)
+
+    if not versions:
+        return ""
+
+    if len(versions) == 1:
+        joined = versions[0]
+        verb = "is"
+    else:
+        joined = ", ".join(versions[:-1]) + " and " + versions[-1]
+        verb = "are"
+
+    return (
+        f"This answer cites {joined}, which {verb} superseded. "
+        "Check the current documentation before you ship."
+    )
+
+
 def extractive_answer(chunks: list[SearchResult]) -> Answer:
     """Offline fallback: quote the best chunk verbatim with a citation.
 
@@ -149,12 +182,14 @@ def extractive_answer(chunks: list[SearchResult]) -> Answer:
         excerpt = f"{excerpt} {sentence}".strip()
 
     answer_text = f"{excerpt} [{1}]"
+    sources = sources_for(chunks, [1])
     return Answer(
         status="answered",
         answer=answer_text,
-        sources=sources_for(chunks, [1]),
+        sources=sources,
         model="extractive",
         reason="no_api_key",
+        notice=superseded_notice(sources),
     )
 
 
@@ -248,9 +283,11 @@ def generate_answer(
                 reason="invalid_citations",
             )
 
+    sources = sources_for(chunks, cited_indexes(raw))
     return Answer(
         status="answered",
         answer=raw.strip(),
-        sources=sources_for(chunks, cited_indexes(raw)),
+        sources=sources,
         model=config.llm_model,
+        notice=superseded_notice(sources),
     )

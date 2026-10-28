@@ -131,6 +131,25 @@ the not-found state. An uncited answer is never shown.
 | Missing version | Treated as `unknown`, never silently matched to a real version |
 | Mixed versions | Answer states which version each claim applies to |
 
+### 7.1 Superseded documents
+
+A retired version is not deleted, because "what did v2 do?" is a legitimate
+question. Two mechanisms keep it honest:
+
+- **Ranking.** After Reciprocal Rank Fusion, every chunk whose `status` is
+  `superseded` loses a small fixed penalty (`SUPERSEDED_PENALTY = 0.0015`).
+  The penalty never filters; it only breaks near-ties in favour of `current`.
+  A v2 page that is clearly the best match for a v2 question still wins,
+  because one rank step in an RRF list is worth `1 / (K + rank)` ≈ 0.016.
+- **Disclosure.** The prompt asks the model to prefer `current` documents and
+  to name the version it used. Independently of the model, `superseded_notice()`
+  inspects the *validated* sources and sets `Answer.notice`, e.g. "This answer
+  cites v2, which is superseded. Check the current documentation before you
+  ship." The UI renders it as an amber banner above the answer body.
+
+The notice is computed from citation metadata, not from model text, so it
+cannot be hallucinated away.
+
 ---
 
 ## 8. API

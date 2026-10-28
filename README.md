@@ -8,11 +8,11 @@ A software vendor maintains API references, migration guides, and changelogs acr
 
 ## Status
 
-**Sprint 2 · Day 9 of 20 — complete.**
+**Sprint 2 · Day 10 of 20 — complete.**
 
 Scaffold, corpus, chunking, hybrid retrieval, grounded answers with validated
-citations, the answer UI, and version and document-type filters are working.
-Superseded-document handling is next.
+citations, the answer UI, version and document-type filters, and
+superseded-document handling are working. The relevance floor is next.
 
 ## Quick start
 
@@ -180,6 +180,9 @@ tokens - no build step.
 - Every card shows its citation number, version, `current` / `superseded`
   status, document type, section, last-updated date, an excerpt with the
   evidence text, and a link to the exact source page.
+- When an answer cites a retired version, an amber notice above the answer says
+  so in plain language. The model is told to prefer current docs, but the
+  notice is computed from the cited metadata, so it cannot be missed.
 - `status: not_found` renders a calm "not found" panel instead of an error.
 - If `/api/ask` is unreachable the page falls back to `/api/search`, so you
   still get the matching documents.
@@ -199,8 +202,8 @@ tokens - no build step.
 | 7 | Answer panel and citation links | Done |
 | 8 | Version filter | Done |
 | 9 | Document-type filter | Done |
-| 10 | Superseded-document handling | Next |
-| 11 | Not-found and low-confidence path | Planned |
+| 10 | Superseded-document handling | Done |
+| 11 | Not-found and low-confidence path | Next |
 | 12 | Golden-set evaluation harness | Planned |
 | 13 | Evaluation in CI | Planned |
 | 14 | Confidence and explanation panel | Planned |

@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 28 October 2026 - Day 9 complete
+**Last updated:** 28 October 2026 - Day 10 complete
 
 ---
 
@@ -112,8 +112,8 @@ Planned additions: `tests/golden_set.json`, `app/metrics.py`.
 | 7 | Answer panel and citation links | **Done** |
 | 8 | Version filter | **Done** |
 | 9 | Document-type filter | **Done** |
-| 10 | Superseded-document handling | Next |
-| 11 | Not-found and low-confidence path | Planned |
+| 10 | Superseded-document handling | **Done** |
+| 11 | Not-found and low-confidence path | Next |
 | 12 | Golden-set evaluation harness | Planned |
 | 13 | Evaluation in CI | Planned |
 | 14 | Confidence and explanation panel | Planned |
@@ -170,7 +170,7 @@ pytest                          # run tests
 
 ---
 
-## 8. Current state (end of Day 9)
+## 8. Current state (end of Day 10)
 
 - `corpus/` has 12 sample Markdown docs across v1/v2/v3 (v3 `current`, v1/v2
   `superseded`). Ingestion produces 60 chunks with full citation metadata.
@@ -194,11 +194,19 @@ pytest                          # run tests
   outline). `not_found` is a calm panel. A failed ask falls back to
   `/api/search`. Version and document-type `<select>`s scope the request and
   are named in the result line.
+- **Superseded documents** are demoted, never hidden:
+  - `_fuse()` subtracts `SUPERSEDED_PENALTY = 0.0015` from any chunk whose
+    `status` is `superseded`, after fusion and before sorting. One RRF rank
+    step is ~0.016, so the penalty only breaks near-ties.
+  - `superseded_notice(sources)` in `app/answer.py` returns a sentence naming
+    every retired version among the *validated* citations, or `""`.
+  - `Answer.notice` is exposed in `to_dict()` and rendered as an amber banner
+    above the answer body. The model cannot suppress it.
 - Config from env + `.env`: `GEMINI_API_KEY`, `VADA_EMBEDDING_MODEL`
   (`gemini-embedding-001`), `VADA_LLM_MODEL` (`gemini-3.1-flash-lite-preview`),
   `VADA_EMBEDDINGS` (`gemini` / `hash` / `off`).
-- 90 tests pass locally (12 more filter tests). CI forces `VADA_EMBEDDINGS=hash`
-  and a blank key.
+- 97 tests pass locally (7 more superseded tests). CI forces
+  `VADA_EMBEDDINGS=hash` and a blank key.
 - **Known gap:** vector search always returns `limit` neighbours, so a nonsense
   query still retrieves cards. Day 11 adds the similarity floor.
 
@@ -210,41 +218,45 @@ from app.answer import generate_answer
 
 chunks = hybrid_search("pagination", limit=5, version="v3", doc_type="migration-guide")
 answer = generate_answer("pagination", chunks)
+answer.notice  # "" for current-only citations
 ```
 
 - `SearchResult` fields: `chunk_id, doc_id, title, doc_type, version, status,
   source_url, last_updated, section, text, score, matched_by`
-- `Answer` fields: `status, answer, sources, model, reason`; each source
+- `Answer` fields: `status, answer, sources, model, reason, notice`; each source
   carries `index`, the citation metadata, and its `text`.
-- Every chunk already has `status` (`current` / `superseded`), which is what
-  Day 10 needs.
+- Scores are now rounded to 6 decimals because of the penalty.
 
 ---
 
-## 9. Next task - Day 10: superseded-document handling
+## 9. Next task - Day 11: not-found and low-confidence path
 
-**Goal:** when an answer leans on a retired version, say so - and never let a
-superseded chunk quietly outrank a current one.
+**Goal:** when the corpus cannot answer, say so instead of returning four
+vaguely related cards.
 
 **Build**
 
-1. `app/retriever.py`: in `_fuse`, apply a small, documented penalty to chunks
-   whose `status` is `superseded` (e.g. `SUPERSEDED_PENALTY = 0.0015`) so
-   near-ties favour `current`. Do not filter retired docs out - they are often
-   the right answer for a v2 question.
-2. `app/answer.py`: add `notice: str = ""` to `Answer` and `to_dict()`. When any
-   cited source is `superseded`, set a sentence naming the version(s), e.g.
-   "This answer cites v2, which is superseded. See v3 for the current API."
-   Keep it out of the model's text; the model already states the version.
-3. Prompt: add one rule - prefer `current` documents when both answer the
-   question, and say which version you used.
-4. UI: render `notice` as a small amber banner above the answer body; the
-   existing `superseded` badge stays on the card.
-5. Tests: penalty flips a near-tie, current still wins normally, notice set for
-   superseded citations only, empty when all sources are current.
-6. Document the behaviour in `docs/RAG_ARCHITECTURE.md`.
+1. `app/search.py`: `search()` returns raw BM25 scores, which are unbounded and
+   negative-ish. Expose `bm25` on each `SearchResult` so a threshold can be
+   calibrated (keep `score` as the fused number the UI shows).
+2. `app/retriever.py`: add a floor. Vector hits below a cosine similarity
+   (e.g. `MIN_SIMILARITY = 0.35`) are dropped before fusion; a query that
+   produces no keyword hits *and* no accepted vector hits returns `[]`.
+   Make both thresholds module constants with a comment on how they were
+   chosen.
+3. `app/answer.py`: `generate_answer()` already returns `not_found` for empty
+   chunks - keep that path, and add `reason="below_threshold"` distinct from
+   `no_matches`.
+4. `app/main.py`: `/api/search` with zero results should still be `200` with
+   `count: 0` (no change), but the ask response should carry the reason.
+5. UI: a genuine not-found panel that hides the card list entirely and offers
+   two example chips that *do* work.
+6. Tests: nonsense query returns `[]` from both retrievers, a weak vector match
+   is dropped, a real query still passes, `not_found` carries
+   `below_threshold`, UI hides cards.
+7. Document the floors in `docs/RAG_ARCHITECTURE.md` §9.
 
-**Do not** add the relevance threshold (Day 11) or confidence scoring (Day 14).
+**Do not** add confidence scoring or the explanation panel - that is Day 14.
 
 ---
 
@@ -286,3 +298,4 @@ superseded chunk quietly outrank a current one.
 | 7 | 28 Oct 2026 | Answer panel with linked citations (`/api/ask` in the UI, `:target` source cards, retrieval fallback), 66 tests |
 | 8 | 28 Oct 2026 | Version filter across FTS5, Chroma and the UI (`normalize_version`, scoped `/api/search` + `/api/ask`), 78 tests |
 | 9 | 28 Oct 2026 | Document-type filter plus combined scopes (`normalize_doc_type`, parameterised FTS filters, second UI selector), 90 tests |
+| 10 | 28 Oct 2026 | Superseded handling: RRF demotion penalty, `Answer.notice`, UI amber banner, superseded tests, 97 tests |
