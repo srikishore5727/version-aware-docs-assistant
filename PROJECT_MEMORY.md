@@ -30,9 +30,9 @@ These are settled. Do not change them without updating `docs/PRD.md`.
 
 | Decision | Value |
 |---|---|
-| Retrieval | Keyword search with BM25 (SQLite FTS5). No embeddings in v1. |
+| Retrieval | Hybrid: Gemini embeddings + Chroma, fused with BM25 (SQLite FTS5) via Reciprocal Rank Fusion |
 | Chunking | Split by heading, about 500 characters, 80-character overlap |
-| Answering | LLM receives only retrieved chunks; must cite or return not found |
+| Answering | Gemini Flash via the OpenAI-compatible endpoint, receiving only retrieved chunks; must cite or return not found |
 | Citations | Inline `[1]`, `[2]` plus source cards with type, version, section, date |
 | Filters | Version and document type |
 | Auth | None in v1 |
@@ -203,7 +203,9 @@ chunks = load_chunks("corpus", size=500, overlap=80)   # list[Chunk]
 
 ## 10. Guardrails
 
-- v1 is **keyword retrieval only**. Do not introduce embeddings or a vector database.
+- Retrieval is **hybrid**: vector search (Gemini embeddings + Chroma) fused with BM25.
+  Both paths must stay working; BM25 is the no-key fallback. See `docs/RAG_ARCHITECTURE.md`.
+- No LangChain, no re-rankers, no chat memory. Keep the pipeline readable.
 - Every answer must include a citation or the not-found state. No uncited answers.
 - No authentication, no chat memory, no code generation, no mobile app.
 - Keep each PR to one feature. If a task grows, split it.
