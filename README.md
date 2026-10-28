@@ -8,11 +8,11 @@ A software vendor maintains API references, migration guides, and changelogs acr
 
 ## Status
 
-**Sprint 2 · Day 8 of 20 — complete.**
+**Sprint 2 · Day 9 of 20 — complete.**
 
 Scaffold, corpus, chunking, hybrid retrieval, grounded answers with validated
-citations, the answer UI, and a version filter are working. The document-type
-filter is next.
+citations, the answer UI, and version and document-type filters are working.
+Superseded-document handling is next.
 
 ## Quick start
 
@@ -119,6 +119,8 @@ curl -X POST http://127.0.0.1:8000/api/search ^
 - `limit` defaults to 5 and is capped at 20.
 - `version` is optional and restricted to `v1`, `v2`, or `v3`; anything else
   returns `400`. The response echoes the applied scope.
+- `doc_type` is optional and restricted to `api-reference`, `migration-guide`,
+  or `changelog`; it can be combined with `version`.
 - An empty query returns `400`.
 - A query with no matches returns `count: 0` and an empty `results` list.
 
@@ -171,6 +173,8 @@ tokens - no build step.
 
 - One question box, example chips, an answer panel, then the source cards.
 - A version selector scopes both retrieval and the answer to v1, v2, or v3.
+- A document-type selector narrows results to API reference, migration guide,
+  or changelog. Both filters can be combined.
 - Every `[n]` in the answer is a link: it jumps to the card it cites, which is
   briefly outlined so the evidence is obvious.
 - Every card shows its citation number, version, `current` / `superseded`
@@ -194,8 +198,8 @@ tokens - no build step.
 | 6 | Search UI with source cards | Done |
 | 7 | Answer panel and citation links | Done |
 | 8 | Version filter | Done |
-| 9 | Document-type filter | Next |
-| 10 | Superseded-document handling | Planned |
+| 9 | Document-type filter | Done |
+| 10 | Superseded-document handling | Next |
 | 11 | Not-found and low-confidence path | Planned |
 | 12 | Golden-set evaluation harness | Planned |
 | 13 | Evaluation in CI | Planned |

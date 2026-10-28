@@ -7,6 +7,7 @@
   var submit = document.getElementById("submit");
   var chips = document.getElementById("chips");
   var versionSelect = document.getElementById("version");
+  var docTypeSelect = document.getElementById("doc-type");
   var results = document.getElementById("results");
   var hint = document.getElementById("hint");
   var answerBox = document.getElementById("answer");
@@ -112,11 +113,18 @@
     var payload = { limit: limit };
     payload[questionKey] = query;
     if (versionSelect && versionSelect.value) payload.version = versionSelect.value;
+    if (docTypeSelect && docTypeSelect.value) payload.doc_type = docTypeSelect.value;
     return payload;
   }
 
+  function selectedLabel(select) {
+    if (!select || !select.value) return "";
+    return select.options[select.selectedIndex].text.toLowerCase().replace(" (current)", "");
+  }
+
   function scopeLabel() {
-    return versionSelect && versionSelect.value ? " in " + versionSelect.value : "";
+    var parts = [selectedLabel(versionSelect), selectedLabel(docTypeSelect)].filter(Boolean);
+    return parts.length ? " in " + parts.join(" \u00b7 ") : "";
   }
 
   function setBusy(isBusy) {

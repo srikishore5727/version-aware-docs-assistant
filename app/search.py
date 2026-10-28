@@ -49,23 +49,19 @@ INSERT INTO chunks (
 
 # bm25() weights follow the column order above. Title and section are boosted
 # so a document whose heading matches the question outranks a passing mention.
-SELECT_SQL = """
+# ``{filters}`` is filled with parameterised ``AND column = ?`` clauses.
+SELECT_TEMPLATE = """
 SELECT
     chunk_id, doc_id, title, doc_type, version, status, source_url,
     last_updated, section, text,
     -bm25(chunks, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 1.0) AS score
 FROM chunks
-WHERE chunks MATCH ?
+WHERE chunks MATCH ?{filters}
 ORDER BY score DESC
 LIMIT ?
 """
 
-# Same query with a version constraint. ``version`` is an UNINDEXED FTS5
-# column, so it can still be compared in WHERE.
-SELECT_BY_VERSION_SQL = SELECT_SQL.replace(
-    "WHERE chunks MATCH ?",
-    "WHERE chunks MATCH ?\n  AND version = ?",
-)
+SELECT_SQL = SELECT_TEMPLATE.format(filters="")
 
 TOKEN_RE = re.compile(r"[A-Za-z0-9_]+")
 
@@ -217,10 +213,12 @@ def search(
     query: str,
     limit: int = DEFAULT_LIMIT,
     version: str | None = None,
+    doc_type: str | None = None,
 ) -> list[SearchResult]:
     """Return BM25-ranked chunks for a query. Highest score first.
 
-    ``version`` restricts results to one API version when given.
+    ``version`` and ``doc_type`` restrict results when given. Both columns are
+    UNINDEXED in the FTS5 table, so they are compared in the WHERE clause.
     """
     expression = build_match_query(query)
     bounded_limit = max(1, min(int(limit), MAX_LIMIT))
@@ -229,15 +227,19 @@ def search(
     if not path.exists():
         raise FileNotFoundError(f"search index not found: {path}")
 
-    if version:
-        params: tuple = (expression, version, bounded_limit)
-        statement = SELECT_BY_VERSION_SQL
-    else:
-        params = (expression, bounded_limit)
-        statement = SELECT_SQL
+    filters: list[str] = []
+    params: list = [expression]
+
+    for column, value in (("version", version), ("doc_type", doc_type)):
+        if value:
+            filters.append(f"\n  AND {column} = ?")
+            params.append(value)
+
+    statement = SELECT_TEMPLATE.format(filters="".join(filters))
+    params.append(bounded_limit)
 
     with closing(sqlite3.connect(path)) as connection:
-        rows = connection.execute(statement, params).fetchall()
+        rows = connection.execute(statement, tuple(params)).fetchall()
 
     return [SearchResult(*row) for row in rows]
 

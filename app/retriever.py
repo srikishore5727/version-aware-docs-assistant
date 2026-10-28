@@ -27,6 +27,9 @@ TOP_K_PER_RETRIEVER = 10
 # than a silent empty result. The index refresh (Day 17) revisits this.
 SUPPORTED_VERSIONS = ("v1", "v2", "v3")
 
+# Document types present in ``corpus/``.
+SUPPORTED_DOC_TYPES = ("api-reference", "migration-guide", "changelog")
+
 
 def normalize_version(version: str | None) -> str | None:
     """Validate and canonicalise a version filter.
@@ -44,6 +47,26 @@ def normalize_version(version: str | None) -> str | None:
     if cleaned not in SUPPORTED_VERSIONS:
         allowed = ", ".join(SUPPORTED_VERSIONS)
         raise QueryError(f"unknown version '{version}'. Use one of: {allowed}")
+
+    return cleaned
+
+
+def normalize_doc_type(doc_type: str | None) -> str | None:
+    """Validate and canonicalise a document-type filter.
+
+    Spaces and underscores are accepted so ``"API Reference"`` and
+    ``"migration_guide"`` resolve to the indexed values.
+    """
+    if doc_type is None:
+        return None
+
+    cleaned = doc_type.strip().lower().replace("_", "-").replace(" ", "-")
+    if not cleaned:
+        return None
+
+    if cleaned not in SUPPORTED_DOC_TYPES:
+        allowed = ", ".join(SUPPORTED_DOC_TYPES)
+        raise QueryError(f"unknown doc_type '{doc_type}'. Use one of: {allowed}")
 
     return cleaned
 
@@ -109,16 +132,22 @@ def hybrid_search(
     store: VectorStore | None = None,
     embedder: EmbeddingProvider | None = None,
     version: str | None = None,
+    doc_type: str | None = None,
 ) -> list[SearchResult]:
     """Return the best chunks from both retrievers, fused by rank.
 
-    ``version`` restricts both retrievers to one API version.
+    ``version`` and ``doc_type`` restrict both retrievers.
     """
     config = settings or get_settings()
     scope = normalize_version(version)
+    kind = normalize_doc_type(doc_type)
 
     keyword_hits = search(
-        config.db_path, query, limit=TOP_K_PER_RETRIEVER, version=scope
+        config.db_path,
+        query,
+        limit=TOP_K_PER_RETRIEVER,
+        version=scope,
+        doc_type=kind,
     )
     vector_hits: list[dict] = []
 
@@ -128,10 +157,22 @@ def hybrid_search(
             embedder = embedder or get_embedder(
                 config.embeddings_mode, config.gemini_api_key, config.embedding_model
             )
+            conditions = {}
+            if scope:
+                conditions["version"] = scope
+            if kind:
+                conditions["doc_type"] = kind
+
+            where = None
+            if len(conditions) == 1:
+                where = conditions
+            elif conditions:
+                where = {"$and": [{key: value} for key, value in conditions.items()]}
+
             vector_hits = store.query(
                 embedder.embed_query(query),
                 n_results=TOP_K_PER_RETRIEVER,
-                where={"version": scope} if scope else None,
+                where=where,
             )
         except Exception:
             # A vector failure must never break search; BM25 still answers.
