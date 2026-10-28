@@ -88,6 +88,7 @@ def test_sources_only_cover_cited_chunks() -> None:
     assert len(sources) == 1
     assert sources[0]["index"] == 2
     assert sources[0]["source_url"] == "https://docs.example/2"
+    assert sources[0]["text"] == CHUNKS[1].text
 
 
 # --- generation -----------------------------------------------------------

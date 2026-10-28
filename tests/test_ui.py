@@ -15,7 +15,17 @@ def test_home_serves_the_search_ui() -> None:
     body = response.text
     assert 'id="search-form"' in body
     assert 'id="query"' in body
+    assert 'id="answer"' in body
+    assert 'id="cards"' in body
     assert "Every answer has a" in body
+
+
+def test_script_calls_ask_and_keeps_the_search_fallback() -> None:
+    script = client.get("/app.js").text
+
+    assert "/api/ask" in script
+    assert "/api/search" in script
+    assert "citationText" in script
 
 
 def test_ui_assets_are_served() -> None:

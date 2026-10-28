@@ -271,6 +271,99 @@ h1 em {
   color: var(--muted);
 }
 
+/* --- answer panel ------------------------------------------------------ */
+
+.answer {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+
+.answer--ok {
+  border-left: 3px solid var(--accent);
+}
+
+.answer--miss {
+  border-left: 3px solid #d4d4d8;
+  box-shadow: none;
+}
+
+.answer__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.answer__meta {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.answer__body {
+  margin: 0;
+  font-size: 17.5px;
+  line-height: 1.55;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.answer--miss .answer__body {
+  font-size: 15.5px;
+  color: var(--ink-2);
+}
+
+.answer__foot {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.answer__body code {
+  font-family: var(--mono);
+  font-size: 0.82em;
+  background: #f4f4f5;
+  border-radius: 5px;
+  padding: 1px 4px;
+}
+
+.badge--answered {
+  background: var(--ok-bg);
+  color: var(--ok-ink);
+}
+
+.badge--miss {
+  background: #f4f4f5;
+  color: #52525b;
+}
+
+.cite {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.78em;
+  font-weight: 700;
+  color: var(--accent-ink);
+  text-decoration: none;
+  background: var(--accent-soft);
+  border-radius: 6px;
+  padding: 0 5px;
+  margin: 0 1px;
+}
+
+.cite:hover,
+.cite:focus-visible {
+  background: var(--accent);
+  color: #fff;
+  outline: none;
+}
+
 .summary {
   display: flex;
   align-items: baseline;
@@ -299,6 +392,7 @@ h1 em {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 20px 22px;
+  scroll-margin-top: 24px;
   transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
@@ -306,6 +400,25 @@ h1 em {
   border-color: #c7d2fe;
   box-shadow: var(--shadow);
   transform: translateY(-1px);
+}
+
+.card:target {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14), var(--shadow);
+}
+
+.card__cite {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: var(--ink);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 700;
 }
 
 .card__top {
