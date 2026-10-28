@@ -8,9 +8,10 @@ A software vendor maintains API references, migration guides, and changelogs acr
 
 ## Status
 
-**Sprint 2 · Day 5 of 20 — complete.**
+**Sprint 2 · Day 6 of 20 — complete.**
 
-Scaffold, corpus, chunking, hybrid retrieval, and grounded answer generation with validated citations are working. The interface is next.
+Scaffold, corpus, chunking, hybrid retrieval, grounded answers with validated
+citations, and the search UI are working. The answer panel is next.
 
 ## Quick start
 
@@ -31,6 +32,7 @@ uvicorn app.main:app --reload
 ```
 
 - Health check: <http://127.0.0.1:8000/health>
+- Search UI: <http://127.0.0.1:8000/>
 - API docs: <http://127.0.0.1:8000/docs>
 
 ## Tests
@@ -158,6 +160,21 @@ Behaviour:
 - Without an API key the endpoint returns a verbatim quote from the top chunk
   plus `[1]`, with `"model": "extractive"`.
 
+## Interface
+
+Open <http://127.0.0.1:8000/> for the search UI. It is plain HTML, CSS, and one
+JavaScript file served from `app/static/`, styled with the approved brand
+tokens - no build step.
+
+- One question box, example chips, and one card per retrieved chunk.
+- Every card shows the version, whether it is `current` or `superseded`, the
+  document type, the section, the last-updated date, an excerpt, and a link to
+  the exact source page.
+- The card footer names how the chunk was found (`keyword`, `vector`, or both).
+- States: idle, loading, results, no matches, and a network error.
+- The JSON service map moved to `/api`; `/health`, `/docs`, and `/api/*` are
+  unchanged.
+
 ## 20-day plan
 
 | Day | Feature | Status |
@@ -167,8 +184,8 @@ Behaviour:
 | 3 | Keyword search (SQLite FTS5) and `/api/search` | Done |
 | 4 | Embeddings, Chroma, hybrid retrieval | Done |
 | 5 | Grounded answer generation with citations | Done |
-| 6 | Search UI with source cards | Next |
-| 7 | Answer panel and source cards | Planned |
+| 6 | Search UI with source cards | Done |
+| 7 | Answer panel and citation links | Next |
 | 8 | Version filter | Planned |
 | 9 | Document-type filter | Planned |
 | 10 | Superseded-document handling | Planned |
@@ -187,7 +204,8 @@ Behaviour:
 
 - [Product requirements](docs/PRD.md)
 - [RAG architecture](docs/RAG_ARCHITECTURE.md) - pipeline, prompt contract, failure behaviour
-- [Project memory](PROJECT_MEMORY.md) - read this before continuing the build- [UX mockup](https://srikishore5727.github.io/version-aware-docs-assistant/ux-mockup.html)
+- [Project memory](PROJECT_MEMORY.md) - read this before continuing the build
+- [UX mockup](https://srikishore5727.github.io/version-aware-docs-assistant/ux-mockup.html)
 - [Brand guidelines](https://srikishore5727.github.io/version-aware-docs-assistant/brand-guidelines.html)
 - [Design system](https://srikishore5727.github.io/version-aware-docs-assistant/design-system.html)
 

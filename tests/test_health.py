@@ -14,14 +14,15 @@ def test_health_returns_ok() -> None:
     assert response.json() == {"status": "ok", "service": "vada", "version": "0.1.0"}
 
 
-def test_root_lists_service_metadata() -> None:
-    response = client.get("/")
+def test_api_lists_service_metadata() -> None:
+    response = client.get("/api")
 
     assert response.status_code == 200
     body = response.json()
     assert body["service"] == "VADA"
     assert body["health"] == "/health"
     assert body["docs"] == "/docs"
+    assert body["ui"] == "/"
 
 
 def test_unknown_route_returns_404() -> None:
