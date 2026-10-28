@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VADA - Every answer has a source</title>
+<meta name="description" content="Ask the Nimbus API documentation a question and see the exact versioned page behind every result.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M16 12 32 44 48 12' fill='none' stroke='%23151518' stroke-width='9.2' stroke-linecap='round' stroke-linejoin='round'/><circle cx='32' cy='54' r='3' fill='%234F46E5'/></svg>">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<a class="skip" href="#results">Skip to results</a>
+
+<header class="masthead">
+  <div class="brand">
+    <svg class="brand__mark" viewBox="0 0 64 64" aria-hidden="true">
+      <path d="M16 12 L32 44 L48 12" fill="none" stroke="currentColor" stroke-width="9.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="32" cy="54" r="3" fill="#4F46E5"/>
+    </svg>
+    <span class="brand__name">VADA</span>
+    <span class="brand__sub">Version-aware docs</span>
+  </div>
+  <span class="mode" id="mode" hidden></span>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <h1>Every answer has a <em>source</em>.</h1>
+    <p class="lede">
+      Ask about the Nimbus API. Results come from the versioned documentation,
+      and every card names the page, section, and version it came from.
+    </p>
+
+    <form id="search-form" class="search" role="search">
+      <label class="sr-only" for="query">Your question</label>
+      <input
+        id="query"
+        name="query"
+        type="search"
+        placeholder="Which field replaced user_name in v3?"
+        autocomplete="off"
+        spellcheck="false"
+        required>
+      <button type="submit" id="submit">Search</button>
+    </form>
+
+    <div class="chips" id="chips" aria-label="Example questions">
+      <button type="button" class="chip" data-query="Which field replaced user_name in v3?">user_name in v3</button>
+      <button type="button" class="chip" data-query="How long do access tokens last?">token expiry</button>
+      <button type="button" class="chip" data-query="What is the biggest page size I can ask for?">page size</button>
+      <button type="button" class="chip" data-query="How do I verify a webhook came from you?">webhook signatures</button>
+    </div>
+  </section>
+
+  <section id="results" class="results" aria-live="polite" aria-busy="false">
+    <p class="hint">
+      Search 60 chunks across 12 documents in v1, v2, and v3.
+    </p>
+  </section>
+</main>
+
+<footer class="foot">
+  <span>Nimbus API sample corpus</span>
+  <a href="/docs">API docs</a>
+  <a href="/health">Health</a>
+</footer>
+
+<script src="/app.js" defer></script>
+</body>
+</html>

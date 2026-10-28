@@ -205,5 +205,5 @@ def test_ask_endpoint_rejects_empty_question(client: TestClient) -> None:
     assert client.post("/api/ask", json={"question": "  "}).status_code == 400
 
 
-def test_root_advertises_ask(client: TestClient) -> None:
-    assert client.get("/").json()["ask"] == "/api/ask"
+def test_api_advertises_ask(client: TestClient) -> None:
+    assert client.get("/api").json()["ask"] == "/api/ask"

@@ -149,5 +149,5 @@ def test_endpoint_rejects_invalid_limit(client: TestClient) -> None:
     assert client.post("/api/search", json={"query": "user", "limit": 0}).status_code == 422
 
 
-def test_root_advertises_search(client: TestClient) -> None:
-    assert client.get("/").json()["search"] == "/api/search"
+def test_api_advertises_search(client: TestClient) -> None:
+    assert client.get("/api").json()["search"] == "/api/search"

@@ -2,12 +2,14 @@
 
 Application entry point.
 
-Days 1-5: scaffold, ingestion, BM25 keyword search, hybrid retrieval, and
-grounded answer generation with validated citations.
+Days 1-6: scaffold, ingestion, BM25 keyword search, hybrid retrieval, grounded
+answer generation with validated citations, and the search UI.
 """
 
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from pathlib import Path
 
 from app import __version__
 from app.answer import generate_answer
@@ -17,6 +19,7 @@ from app.search import QueryError
 
 APP_NAME = "VADA"
 APP_DESCRIPTION = "Version-aware answers over product documentation, with citations."
+STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 app = FastAPI(
     title="VADA API",
@@ -45,12 +48,13 @@ def health() -> dict:
     return {"status": "ok", "service": "vada", "version": __version__}
 
 
-@app.get("/", tags=["system"])
-def root() -> dict:
-    """Service metadata. Replaced by the UI in a later day."""
+@app.get("/api", tags=["system"])
+def metadata() -> dict:
+    """Service metadata and endpoint map. ``/`` serves the UI."""
     return {
         "service": APP_NAME,
         "version": __version__,
+        "ui": "/",
         "docs": "/docs",
         "health": "/health",
         "search": "/api/search",
@@ -109,3 +113,8 @@ def ask(payload: AskRequest) -> dict:
         "mode": "hybrid" if settings.vectors_enabled else "keyword",
         **answer.to_dict(),
     }
+
+
+# Mounted last, so every route above wins: /health, /docs, /api still work and
+# "/" serves the single-page UI from app/static.
+app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="ui")

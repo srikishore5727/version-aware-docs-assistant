@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 28 October 2026 - Day 5 complete
+**Last updated:** 28 October 2026 - Day 6 complete
 
 ---
 
@@ -65,13 +65,15 @@ version-aware-docs-assistant/
 |-- .github/workflows/ci.yml   CI: install deps and run pytest
 |-- app/
 |   |-- __init__.py            Version constant
-|   |-- main.py                FastAPI app: /health, /, /api/search
+|   |-- main.py                FastAPI app: API routes + UI mount
 |   |-- config.py              Settings from env + .env
 |   |-- ingest.py              Front-matter parser, corpus loader, chunker
 |   |-- search.py              FTS5 index, BM25 keyword search
 |   |-- embeddings.py          Gemini embeddings + offline hashing fallback
 |   |-- vector_store.py        Chroma collection wrapper
-|   `-- retriever.py           Hybrid retrieval (RRF fusion) + index build
+|   |-- retriever.py           Hybrid retrieval (RRF fusion) + index build
+|   |-- answer.py              Prompt contract, citation checks, Gemini call
+|   `-- static/                Search UI: index.html, app.css, app.js
 |-- corpus/                    12 sample Markdown docs (api-reference, migration-guide, changelog)
 |-- data/index/                Generated indexes: vada.db + chroma/ (gitignored)
 |-- tests/
@@ -79,7 +81,9 @@ version-aware-docs-assistant/
 |   |-- test_health.py
 |   |-- test_ingest.py
 |   |-- test_search.py
-|   `-- test_hybrid.py
+|   |-- test_hybrid.py
+|   |-- test_answer.py
+|   `-- test_ui.py
 |-- docs/
 |   |-- PRD.md                 Product requirements (v1.0)
 |   `-- RAG_ARCHITECTURE.md    Pipeline, prompt contract, failure behaviour
@@ -91,7 +95,7 @@ version-aware-docs-assistant/
 `-- PROJECT_MEMORY.md          This file
 ```
 
-Planned additions: `app/answer.py`, `app/static/` (UI), `tests/golden_set.json`.
+Planned additions: `tests/golden_set.json`, `app/metrics.py`.
 
 ---
 
@@ -104,8 +108,8 @@ Planned additions: `app/answer.py`, `app/static/` (UI), `tests/golden_set.json`.
 | 3 | SQLite FTS5 index, `/api/search` | **Done** |
 | 4 | Embeddings, Chroma, hybrid retrieval | **Done** |
 | 5 | Grounded answer generation, `/api/ask` | **Done** |
-| 6 | Search UI with source cards | Next |
-| 7 | Answer panel and source cards | Planned |
+| 6 | Search UI with source cards | **Done** |
+| 7 | Answer panel and citation links | Next |
 | 8 | Version filter | Planned |
 | 9 | Document-type filter | Planned |
 | 10 | Superseded-document handling | Planned |
@@ -166,7 +170,7 @@ pytest                          # run tests
 
 ---
 
-## 8. Current state (end of Day 5)
+## 8. Current state (end of Day 6)
 
 - `corpus/` has 12 sample Markdown docs across v1/v2/v3 (v3 `current`, v1/v2
   `superseded`). Ingestion produces 60 chunks with full citation metadata.
@@ -178,18 +182,22 @@ pytest                          # run tests
 - **Grounded generation** (`app/answer.py`) is live behind `POST /api/ask`.
   Gemini answers only from the numbered context; citations are validated in
   code (`[1]` and grouped `[1, 3]`); one retry, then `not_found`.
+- **Search UI** at `/` (`app/static/`): plain HTML/CSS/JS, brand tokens, card
+  per chunk with version/status/type/section/date/excerpt/source link. Calls
+  `POST /api/search` with `limit: 5`. States: idle, loading, results, empty,
+  error. `StaticFiles` is mounted **last** so API routes win; JSON metadata
+  moved to `/api`.
 - `POST /api/search` returns `{"query", "mode", "count", "results"}`.
   `POST /api/ask` returns `{"question", "mode", "status", "answer", "sources",
   "model", "reason"}`.
 - Config from env + `.env`: `GEMINI_API_KEY`, `VADA_EMBEDDING_MODEL`
   (`gemini-embedding-001`), `VADA_LLM_MODEL` (`gemini-3.1-flash-lite-preview`),
   `VADA_EMBEDDINGS` (`gemini` / `hash` / `off`).
-- 60 tests pass locally (3 scaffold + 10 ingestion + 17 search + 12 hybrid +
-  18 answer). CI forces `VADA_EMBEDDINGS=hash` and a blank key, so it never
-  calls the network.
-- Verified live against Gemini: `display_name` replacement, `page=2` -> 400,
-  token expiry 60 minutes, rate-limit question -> `not_found`.
-- No UI and no filters yet.
+- 65 tests pass locally (3 scaffold + 10 ingestion + 17 search + 12 hybrid +
+  18 answer + 5 UI). CI forces `VADA_EMBEDDINGS=hash` and a blank key.
+- **Known gap:** vector search always returns `limit` neighbours, so a nonsense
+  query still shows cards. The UI's empty state only triggers in keyword mode
+  today; Day 11 adds the relevance floor that makes `not_found` reachable.
 
 **APIs (stable - build on these next):**
 
@@ -210,30 +218,30 @@ answer = generate_answer("how do I paginate users", chunks)   # Answer
 
 ---
 
-## 9. Next task - Day 6: search UI with source cards
+## 9. Next task - Day 7: answer panel with citation links
 
-**Goal:** a usable single page at `/` that searches the corpus, shows the
-grounded answer, and exposes the citation behind it.
+**Goal:** put the grounded answer above the source cards, and make every `[n]`
+marker in the answer jump to the card it cites.
 
 **Build**
 
-1. Serve `app/static/` from FastAPI (`StaticFiles`), so `/` is the UI and
-   `/docs`, `/health`, `/api/*` keep working. Keep the JSON root metadata at
-   `/api` if it would otherwise be shadowed.
-2. Reuse the design tokens already approved in `mockups/design-system.html`
-   (ink `#111318`, indigo `#4F46E5`, 8px spacing scale) and the logo mark.
-   No Tailwind, no build step - plain HTML, CSS, and one `app.js`.
-3. Layout: brand row, one question input with submit, example-question chips,
-   then an answer panel followed by source cards.
-4. Call `POST /api/ask` and render:
-   - `answered`: answer text with `[n]` markers turned into links that scroll to
-     the matching source card; version badge on every card.
-   - `not_found`: a calm "not in the indexed docs" state, not an error toast.
-5. States: idle, loading (disable submit), answered, not found, network error.
-6. Keep it accessible: labels on inputs, focus rings, `aria-live` on results.
-7. Test that `/` returns HTML containing the form and that `/docs` still works.
+1. In `app/static/index.html`, add an answer panel inside `#results` (before the
+   card list) with: a status line ("Answered for v3"), the answer body, and a
+   model/mode footnote.
+2. `app.js`: call `POST /api/ask` instead of `/api/search` (same query, same
+   limit). Render `status: answered` -> answer text + `sources` cards;
+   `status: not_found` -> calm empty state with the reason, not an error.
+3. Turn `[1]` and `[1, 3]` in the answer into `<a href="#source-1">` links.
+   Build them with DOM nodes (text split on `/(\[\d+(?:\s*,\s*\d+)*\])/`), never
+   `innerHTML`, and give each source card `id="source-n"` plus a
+   `:target` highlight style.
+4. Keep `/api/search` and the existing cards reachable: if the answer fails to
+   load, still show retrieval results rather than nothing.
+5. Keep the loading skeleton, `aria-busy`, and `aria-live` behaviour.
+6. Tests: `/` HTML contains `id="answer"`; a unit test for the citation-split
+   helper if it moves into Python; endpoint contract stays covered.
 
-**Do not** add filters or confidence scoring on Day 6. Those are Days 8 and 14.
+**Do not** add filters, tone controls, or confidence scores on Day 7.
 
 ---
 
@@ -271,3 +279,4 @@ grounded answer, and exposes the citation behind it.
 | 3 | 28 Oct 2026 | SQLite FTS5 index + BM25 `POST /api/search` (`app/search.py`), 30 tests |
 | 4 | 28 Oct 2026 | Gemini embeddings + Chroma + hybrid RRF retrieval (`app/embeddings.py`, `vector_store.py`, `retriever.py`), 42 tests |
 | 5 | 28 Oct 2026 | Grounded answer generation with validated citations (`app/answer.py`, `POST /api/ask`), 60 tests |
+| 6 | 28 Oct 2026 | Search UI with source cards (`app/static/`, `StaticFiles`, `/api` metadata), 65 tests |
