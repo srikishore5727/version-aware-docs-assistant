@@ -129,6 +129,7 @@ curl -X POST http://127.0.0.1:8000/api/search ^
 ## Documentation
 
 - [Product requirements](docs/PRD.md)
+- [RAG architecture](docs/RAG_ARCHITECTURE.md) - pipeline, prompt contract, failure behaviour
 - [Project memory](PROJECT_MEMORY.md) - read this before continuing the build
 - [UX mockup](https://srikishore5727.github.io/version-aware-docs-assistant/ux-mockup.html)
 - [Brand guidelines](https://srikishore5727.github.io/version-aware-docs-assistant/brand-guidelines.html)
