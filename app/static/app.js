@@ -6,6 +6,7 @@
   var input = document.getElementById("query");
   var submit = document.getElementById("submit");
   var chips = document.getElementById("chips");
+  var versionSelect = document.getElementById("version");
   var results = document.getElementById("results");
   var hint = document.getElementById("hint");
   var answerBox = document.getElementById("answer");
@@ -105,6 +106,17 @@
     var flat = kept.join(" ").replace(/\s+/g, " ").trim();
     if (flat.length <= 280) return flat;
     return flat.slice(0, 280).replace(/\s+\S*$/, "") + "...";
+  }
+
+  function payloadFor(query, questionKey) {
+    var payload = { limit: limit };
+    payload[questionKey] = query;
+    if (versionSelect && versionSelect.value) payload.version = versionSelect.value;
+    return payload;
+  }
+
+  function scopeLabel() {
+    return versionSelect && versionSelect.value ? " in " + versionSelect.value : "";
   }
 
   function setBusy(isBusy) {
@@ -214,7 +226,7 @@
     var sources = data.sources || [];
 
     if (data.status !== "answered") {
-      setHint("No verified answer for \u201c" + query + "\u201d");
+      setHint("No verified answer for \u201c" + query + "\u201d" + scopeLabel());
       answerPanel(
         "not_found",
         REASONS[data.reason] || REASONS.model_not_found,
@@ -227,6 +239,7 @@
     setHint(
       sources.length +
         (sources.length === 1 ? " source" : " sources") +
+        scopeLabel() +
         " for \u201c" +
         query +
         "\u201d",
@@ -280,14 +293,16 @@
       var response = await fetch("/api/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: query, limit: limit }),
+        body: JSON.stringify(payloadFor(query, "query")),
       });
       if (!response.ok) throw new Error("HTTP " + response.status);
 
       var data = await response.json();
       reset();
       showMode(data.mode);
-      setHint("Answer unavailable - showing " + data.count + " matching documents instead");
+      setHint(
+        "Answer unavailable - showing " + data.count + " matching documents" + scopeLabel(),
+      );
       renderSources(data.results || []);
     } catch (error) {
       renderFailure();
@@ -302,7 +317,7 @@
       var response = await fetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: query, limit: limit }),
+        body: JSON.stringify(payloadFor(query, "question")),
       });
 
       if (!response.ok) throw new Error("HTTP " + response.status);

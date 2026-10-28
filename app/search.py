@@ -1,11 +1,10 @@
 """Keyword search over the chunked corpus using SQLite FTS5.
 
-Day 3 scope:
 - build an FTS5 index over chunks produced by :mod:`app.ingest`
 - run BM25-ranked queries and return chunk text with citation metadata
+- filter by version (Day 8); document-type filtering arrives on Day 9
 
-Ranking is plain keyword relevance. No embeddings, no vector store.
-Filters by version and document type arrive on Day 6.
+Ranking is plain keyword relevance. Embeddings are fused in :mod:`app.retriever`.
 """
 
 from __future__ import annotations
@@ -60,6 +59,13 @@ WHERE chunks MATCH ?
 ORDER BY score DESC
 LIMIT ?
 """
+
+# Same query with a version constraint. ``version`` is an UNINDEXED FTS5
+# column, so it can still be compared in WHERE.
+SELECT_BY_VERSION_SQL = SELECT_SQL.replace(
+    "WHERE chunks MATCH ?",
+    "WHERE chunks MATCH ?\n  AND version = ?",
+)
 
 TOKEN_RE = re.compile(r"[A-Za-z0-9_]+")
 
@@ -210,8 +216,12 @@ def search(
     db_path: str | Path,
     query: str,
     limit: int = DEFAULT_LIMIT,
+    version: str | None = None,
 ) -> list[SearchResult]:
-    """Return BM25-ranked chunks for a query. Highest score first."""
+    """Return BM25-ranked chunks for a query. Highest score first.
+
+    ``version`` restricts results to one API version when given.
+    """
     expression = build_match_query(query)
     bounded_limit = max(1, min(int(limit), MAX_LIMIT))
     path = Path(db_path)
@@ -219,8 +229,15 @@ def search(
     if not path.exists():
         raise FileNotFoundError(f"search index not found: {path}")
 
+    if version:
+        params: tuple = (expression, version, bounded_limit)
+        statement = SELECT_BY_VERSION_SQL
+    else:
+        params = (expression, bounded_limit)
+        statement = SELECT_SQL
+
     with closing(sqlite3.connect(path)) as connection:
-        rows = connection.execute(SELECT_SQL, (expression, bounded_limit)).fetchall()
+        rows = connection.execute(statement, params).fetchall()
 
     return [SearchResult(*row) for row in rows]
 

@@ -8,11 +8,11 @@ A software vendor maintains API references, migration guides, and changelogs acr
 
 ## Status
 
-**Sprint 2 · Day 7 of 20 — complete.**
+**Sprint 2 · Day 8 of 20 — complete.**
 
 Scaffold, corpus, chunking, hybrid retrieval, grounded answers with validated
-citations, and the answer UI with linked source cards are working. Version
-filters are next.
+citations, the answer UI, and a version filter are working. The document-type
+filter is next.
 
 ## Quick start
 
@@ -117,6 +117,8 @@ curl -X POST http://127.0.0.1:8000/api/search ^
 ```
 
 - `limit` defaults to 5 and is capped at 20.
+- `version` is optional and restricted to `v1`, `v2`, or `v3`; anything else
+  returns `400`. The response echoes the applied scope.
 - An empty query returns `400`.
 - A query with no matches returns `count: 0` and an empty `results` list.
 
@@ -168,6 +170,7 @@ JavaScript file served from `app/static/`, styled with the approved brand
 tokens - no build step.
 
 - One question box, example chips, an answer panel, then the source cards.
+- A version selector scopes both retrieval and the answer to v1, v2, or v3.
 - Every `[n]` in the answer is a link: it jumps to the card it cites, which is
   briefly outlined so the evidence is obvious.
 - Every card shows its citation number, version, `current` / `superseded`
@@ -190,8 +193,8 @@ tokens - no build step.
 | 5 | Grounded answer generation with citations | Done |
 | 6 | Search UI with source cards | Done |
 | 7 | Answer panel and citation links | Done |
-| 8 | Version filter | Next |
-| 9 | Document-type filter | Planned |
+| 8 | Version filter | Done |
+| 9 | Document-type filter | Next |
 | 10 | Superseded-document handling | Planned |
 | 11 | Not-found and low-confidence path | Planned |
 | 12 | Golden-set evaluation harness | Planned |
