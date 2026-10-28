@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 28 October 2026 - Day 8 complete
+**Last updated:** 28 October 2026 - Day 9 complete
 
 ---
 
@@ -111,8 +111,8 @@ Planned additions: `tests/golden_set.json`, `app/metrics.py`.
 | 6 | Search UI with source cards | **Done** |
 | 7 | Answer panel and citation links | **Done** |
 | 8 | Version filter | **Done** |
-| 9 | Document-type filter | Next |
-| 10 | Superseded-document handling | Planned |
+| 9 | Document-type filter | **Done** |
+| 10 | Superseded-document handling | Next |
 | 11 | Not-found and low-confidence path | Planned |
 | 12 | Golden-set evaluation harness | Planned |
 | 13 | Evaluation in CI | Planned |
@@ -170,7 +170,7 @@ pytest                          # run tests
 
 ---
 
-## 8. Current state (end of Day 8)
+## 8. Current state (end of Day 9)
 
 - `corpus/` has 12 sample Markdown docs across v1/v2/v3 (v3 `current`, v1/v2
   `superseded`). Ingestion produces 60 chunks with full citation metadata.
@@ -179,24 +179,25 @@ pytest                          # run tests
   - `data/index/chroma/` - Chroma collection, cosine, Gemini embeddings (768d)
 - **Hybrid retrieval** (`app/retriever.py`): Reciprocal Rank Fusion (K=60) of
   both lists. A vector failure silently falls back to BM25.
-- **Version filter** works end to end: `hybrid_search(..., version="v3")`
-  adds `AND version = ?` to FTS5 and `where={"version": ...}` to Chroma.
-  `normalize_version()` is case-insensitive, treats `None`/`""` as "all", and
-  raises `QueryError` for anything outside `SUPPORTED_VERSIONS` (`v1`, `v2`,
-  `v3`) so the API answers `400` instead of an empty list.
+- **Filters** work end to end and combine:
+  - `normalize_version()` -> `SUPPORTED_VERSIONS` (`v1`, `v2`, `v3`)
+  - `normalize_doc_type()` -> `SUPPORTED_DOC_TYPES` (`api-reference`,
+    `migration-guide`, `changelog`), accepts spaces/underscores and any case
+  - FTS5 gets parameterised `AND column = ?` clauses built from a filter list;
+    Chroma gets a single condition or `{"$and": [...]}`
+  - API responses echo `version` and `doc_type`
 - **Grounded generation** (`app/answer.py`) is live behind `POST /api/ask`.
   Gemini answers only from the numbered context; citations are validated in
   code (`[1]` and grouped `[1, 3]`); one retry, then `not_found`.
 - **Answer UI** at `/`: calls `POST /api/ask`, renders an answer panel with
   `[n]` links, then one source card per citation (`id="source-n"`, `:target`
   outline). `not_found` is a calm panel. A failed ask falls back to
-  `/api/search`. A version `<select>` scopes the request and is echoed in the
-  result line.
-- Both API responses now echo `"version"` (the applied scope, or `null`).
+  `/api/search`. Version and document-type `<select>`s scope the request and
+  are named in the result line.
 - Config from env + `.env`: `GEMINI_API_KEY`, `VADA_EMBEDDING_MODEL`
   (`gemini-embedding-001`), `VADA_LLM_MODEL` (`gemini-3.1-flash-lite-preview`),
   `VADA_EMBEDDINGS` (`gemini` / `hash` / `off`).
-- 78 tests pass locally (12 new filter tests). CI forces `VADA_EMBEDDINGS=hash`
+- 90 tests pass locally (12 more filter tests). CI forces `VADA_EMBEDDINGS=hash`
   and a blank key.
 - **Known gap:** vector search always returns `limit` neighbours, so a nonsense
   query still retrieves cards. Day 11 adds the similarity floor.
@@ -207,40 +208,43 @@ pytest                          # run tests
 from app.retriever import build_index, hybrid_search, normalize_version
 from app.answer import generate_answer
 
-chunks = hybrid_search("how do I paginate users", limit=5, version="v3")
-answer = generate_answer("how do I paginate users", chunks)
+chunks = hybrid_search("pagination", limit=5, version="v3", doc_type="migration-guide")
+answer = generate_answer("pagination", chunks)
 ```
 
 - `SearchResult` fields: `chunk_id, doc_id, title, doc_type, version, status,
   source_url, last_updated, section, text, score, matched_by`
 - `Answer` fields: `status, answer, sources, model, reason`; each source
   carries `index`, the citation metadata, and its `text`.
-- `doc_type` is already in every chunk and in the Chroma metadata, so Day 9 is
-  the same two-line filter pattern.
+- Every chunk already has `status` (`current` / `superseded`), which is what
+  Day 10 needs.
 
 ---
 
-## 9. Next task - Day 9: document-type filter
+## 9. Next task - Day 10: superseded-document handling
 
-**Goal:** narrow a question to one kind of document - API reference, migration
-guide, or changelog - alone or together with a version.
+**Goal:** when an answer leans on a retired version, say so - and never let a
+superseded chunk quietly outrank a current one.
 
 **Build**
 
-1. `app/search.py`: extend `search()` with `doc_type: str | None = None`. Do not
-   keep bolting on `if` branches - build the WHERE clause from a list of
-   `(column, value)` pairs and a params list.
-2. `app/retriever.py`: `hybrid_search(..., doc_type=None)`; validate against
-   `SUPPORTED_DOC_TYPES = ("api-reference", "migration-guide", "changelog")`
-   with a `normalize_doc_type()` mirroring `normalize_version()`. Chroma
-   `where` must become `{"$and": [...]}` when both filters are set.
-3. `app/main.py`: `SearchRequest` / `AskRequest` gain `doc_type`; echo it.
-4. UI: a second `<select id="doc-type">` ("All types", API reference, Migration
-   guide, Changelog); send only when chosen; the result line names the scope.
-5. Tests: each filter alone, both together (that the intersection is correct),
-   unknown type -> `400`, UI contains the select.
+1. `app/retriever.py`: in `_fuse`, apply a small, documented penalty to chunks
+   whose `status` is `superseded` (e.g. `SUPERSEDED_PENALTY = 0.0015`) so
+   near-ties favour `current`. Do not filter retired docs out - they are often
+   the right answer for a v2 question.
+2. `app/answer.py`: add `notice: str = ""` to `Answer` and `to_dict()`. When any
+   cited source is `superseded`, set a sentence naming the version(s), e.g.
+   "This answer cites v2, which is superseded. See v3 for the current API."
+   Keep it out of the model's text; the model already states the version.
+3. Prompt: add one rule - prefer `current` documents when both answer the
+   question, and say which version you used.
+4. UI: render `notice` as a small amber banner above the answer body; the
+   existing `superseded` badge stays on the card.
+5. Tests: penalty flips a near-tie, current still wins normally, notice set for
+   superseded citations only, empty when all sources are current.
+6. Document the behaviour in `docs/RAG_ARCHITECTURE.md`.
 
-**Do not** change ranking for superseded docs yet - that is Day 10.
+**Do not** add the relevance threshold (Day 11) or confidence scoring (Day 14).
 
 ---
 
@@ -281,3 +285,4 @@ guide, or changelog - alone or together with a version.
 | 6 | 28 Oct 2026 | Search UI with source cards (`app/static/`, `StaticFiles`, `/api` metadata), 65 tests |
 | 7 | 28 Oct 2026 | Answer panel with linked citations (`/api/ask` in the UI, `:target` source cards, retrieval fallback), 66 tests |
 | 8 | 28 Oct 2026 | Version filter across FTS5, Chroma and the UI (`normalize_version`, scoped `/api/search` + `/api/ask`), 78 tests |
+| 9 | 28 Oct 2026 | Document-type filter plus combined scopes (`normalize_doc_type`, parameterised FTS filters, second UI selector), 90 tests |

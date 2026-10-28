@@ -14,7 +14,12 @@ from pathlib import Path
 from app import __version__
 from app.answer import generate_answer
 from app.config import get_settings
-from app.retriever import ensure_ready, hybrid_search, normalize_version
+from app.retriever import (
+    ensure_ready,
+    hybrid_search,
+    normalize_doc_type,
+    normalize_version,
+)
 from app.search import QueryError
 
 APP_NAME = "VADA"
@@ -36,6 +41,10 @@ class SearchRequest(BaseModel):
     version: str | None = Field(
         default=None, description="Restrict results to one API version (v1, v2, v3)"
     )
+    doc_type: str | None = Field(
+        default=None,
+        description="Restrict results to one document type (api-reference, migration-guide, changelog)",
+    )
 
 
 class AskRequest(BaseModel):
@@ -45,6 +54,10 @@ class AskRequest(BaseModel):
     limit: int = Field(default=5, ge=1, le=10, description="Chunks given to the model")
     version: str | None = Field(
         default=None, description="Restrict retrieval to one API version (v1, v2, v3)"
+    )
+    doc_type: str | None = Field(
+        default=None,
+        description="Restrict retrieval to one document type (api-reference, migration-guide, changelog)",
     )
 
 
@@ -79,8 +92,13 @@ def search_chunks(payload: SearchRequest) -> dict:
 
     try:
         scope = normalize_version(payload.version)
+        kind = normalize_doc_type(payload.doc_type)
         results = hybrid_search(
-            payload.query, limit=payload.limit, settings=settings, version=scope
+            payload.query,
+            limit=payload.limit,
+            settings=settings,
+            version=scope,
+            doc_type=kind,
         )
     except QueryError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -90,6 +108,7 @@ def search_chunks(payload: SearchRequest) -> dict:
     return {
         "query": payload.query,
         "version": scope,
+        "doc_type": kind,
         "mode": "hybrid" if settings.vectors_enabled else "keyword",
         "count": len(results),
         "results": [result.to_dict() for result in results],
@@ -111,8 +130,13 @@ def ask(payload: AskRequest) -> dict:
 
     try:
         scope = normalize_version(payload.version)
+        kind = normalize_doc_type(payload.doc_type)
         chunks = hybrid_search(
-            payload.question, limit=payload.limit, settings=settings, version=scope
+            payload.question,
+            limit=payload.limit,
+            settings=settings,
+            version=scope,
+            doc_type=kind,
         )
     except QueryError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -124,6 +148,7 @@ def ask(payload: AskRequest) -> dict:
     return {
         "question": payload.question,
         "version": scope,
+        "doc_type": kind,
         "mode": "hybrid" if settings.vectors_enabled else "keyword",
         **answer.to_dict(),
     }
