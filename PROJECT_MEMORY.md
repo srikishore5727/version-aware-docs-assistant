@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 27 October 2026 - Day 1 complete
+**Last updated:** 28 October 2026 - Day 2 complete
 
 ---
 
@@ -65,9 +65,12 @@ version-aware-docs-assistant/
 ├── .github/workflows/ci.yml   CI: install deps and run pytest
 ├── app/
 │   ├── __init__.py            Version constant
-│   └── main.py                FastAPI app: /health and /
+│   ├── main.py                FastAPI app: /health and /
+│   └── ingest.py              Front-matter parser, corpus loader, chunker
+├── corpus/                    12 sample Markdown docs (api-reference, migration-guide, changelog)
 ├── tests/
-│   └── test_health.py         Tests for the scaffold
+│   ├── test_health.py         Tests for the scaffold
+│   └── test_ingest.py         Tests for parsing, loading, and chunking
 ├── docs/
 │   └── PRD.md                 Product requirements (v1.0)
 ├── mockups/                   UX mockup, brand guidelines, design system (static, deployed)
@@ -77,8 +80,8 @@ version-aware-docs-assistant/
 └── PROJECT_MEMORY.md          This file
 ```
 
-Planned additions: `corpus/` (sample docs), `app/ingest.py`, `app/search.py`,
-`app/answer.py`, `app/static/` (UI), `tests/golden_set.json`.
+Planned additions: `app/search.py`, `app/answer.py`, `app/static/` (UI),
+`tests/golden_set.json`.
 
 ---
 
@@ -87,8 +90,8 @@ Planned additions: `corpus/` (sample docs), `app/ingest.py`, `app/search.py`,
 | Day | Feature | Status |
 |---|---|---|
 | 1 | App scaffold, `/health`, CI | **Done** |
-| 2 | Document ingestion and chunking | Next |
-| 3 | SQLite FTS5 index, `/api/search` | Planned |
+| 2 | Document ingestion and chunking | **Done** |
+| 3 | SQLite FTS5 index, `/api/search` | Next |
 | 4 | Search UI with source cards | Planned |
 | 5 | Grounded answer generation with citations | Planned |
 | 6 | Version and document-type filters | Planned |
@@ -104,8 +107,8 @@ Planned additions: `corpus/` (sample docs), `app/ingest.py`, `app/search.py`,
 **Branches**
 
 ```
-feat/02-docs-ingestion
 feat/03-bm25-search
+feat/04-search-ui
 fix/<short-description>
 docs/<short-description>
 ```
@@ -143,50 +146,58 @@ pytest                          # run tests
 
 ---
 
-## 8. Current state (end of Day 1)
+## 8. Current state (end of Day 2)
 
 - FastAPI app starts and serves `/health` and `/`.
-- Three tests pass locally and in CI.
 - CI workflow runs on every push and pull request to `main`.
-- PRD, UX mockup, brand guidelines, and design system are complete and deployed.
-- No corpus, no search, no answering code yet. That is intentional.
+- `corpus/` has 12 sample Markdown docs: 4 api-reference, 4 migration-guide,
+  4 changelog, across v1/v2/v3. v3 docs are `current`; v1 and v2 are `superseded`.
+- `app/ingest.py` parses YAML front-matter, loads documents, and splits them into
+  heading-aware overlapping chunks. 12 docs currently produce 60 chunks.
+- `pyyaml==6.0.2` added to `requirements.txt`.
+- 13 tests pass locally (3 scaffold + 10 ingestion) and in CI.
+- No search index, no endpoints beyond `/health` and `/`, no UI, no answering yet.
+
+**Ingestion API (stable - build on this next):**
+
+```python
+from app.ingest import load_chunks, load_documents
+
+docs = load_documents("corpus")            # list[Document]
+chunks = load_chunks("corpus", size=500, overlap=80)   # list[Chunk]
+```
+
+- `Document` fields: `doc_id, title, product, doc_type, version, status,
+  source_url, last_updated, body, path`
+- `Chunk` fields: `chunk_id ("<doc_id>::<n>"), doc_id, title, doc_type, version,
+  status, source_url, last_updated, section, text, position`
+- Missing `version` / `doc_type` default to `unknown`; missing `status` defaults to `current`.
+- Raises `IngestionError` on unclosed front-matter, missing `doc_id`/`title`, or duplicate `doc_id`.
 
 ---
 
-## 9. Next task - Day 2: document ingestion and chunking
+## 9. Next task - Day 3: keyword search with SQLite FTS5
 
-**Goal:** turn Markdown files into clean, metadata-carrying chunks.
+**Goal:** index chunks and return ranked results for a query.
 
 **Build**
 
-1. `corpus/` with 12 sample Markdown docs:
-   - 4 API reference pages, 4 migration guides, 4 changelog entries
-   - versions v1, v2, v3 (use `status: current` for v3, `superseded` for older)
-2. Front-matter schema on every file:
+1. `app/search.py`
+   - `build_index(chunks, db_path)` - create an FTS5 table over `chunk.text`
+     plus metadata columns (doc_id, version, doc_type, status, section, source_url)
+   - `search(query, db_path, limit=10)` - BM25-ranked (`ORDER BY rank`),
+     return chunk text plus citation metadata
+   - Escape / quote user input safely for FTS5 (avoid syntax errors on `-`, `"`, etc.)
+2. `POST /api/search` (or `GET /api/search?q=`) in `app/main.py`
+   - Request: `{"query": str, "limit": int = 10}`
+   - Response: `{"query": ..., "results": [{"chunk_id", "text", "score",
+     "doc_id", "title", "doc_type", "version", "section", "source_url"}]}`
+   - Empty or whitespace query returns `400`
+3. Rebuild the index on startup if it is missing (in-memory or `data/index.db`).
+4. Tests: index build, ranked ordering, metadata passthrough, no-match returns
+   empty list, punctuation-heavy query does not crash.
 
-```yaml
----
-doc_id: api-users-create
-title: Create user
-product: Nimbus API
-doc_type: api-reference        # api-reference | migration-guide | changelog
-version: v3
-status: current                # current | superseded
-source_url: https://docs.example.com/v3/users/create
-last_updated: 2026-10-12
----
-```
-
-3. `app/ingest.py`
-   - `load_documents(path) -> list[Document]`
-   - `chunk_document(doc, size=500, overlap=80) -> list[Chunk]`
-   - Default a missing `version` to `unknown`
-   - Skip empty bodies
-4. Add `pyyaml` to `requirements.txt`.
-5. Tests covering: front-matter parsing, missing version default, chunk overlap,
-   every chunk inherits metadata.
-
-**Do not** add search, endpoints, or UI on Day 2.
+**Do not** add the answer generator or UI on Day 3. Filters are Day 6.
 
 ---
 
@@ -218,3 +229,4 @@ last_updated: 2026-10-12
 |---|---|---|
 | 0 | 26 Oct 2026 | PRD v1.0 merged; UX mockup, brand guidelines, design system deployed |
 | 1 | 27 Oct 2026 | FastAPI scaffold, `/health`, tests, CI |
+| 2 | 28 Oct 2026 | Sample corpus (12 docs) + ingestion and heading-aware chunking (`app/ingest.py`), 13 tests |

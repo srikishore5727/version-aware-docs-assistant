@@ -8,9 +8,9 @@ A software vendor maintains API references, migration guides, and changelogs acr
 
 ## Status
 
-**Sprint 2 · Day 1 of 10 — complete.**
+**Sprint 2 · Day 2 of 10 — complete.**
 
-Application scaffold, health endpoint, and CI are in place. The documentation pipeline starts on Day 2.
+Application scaffold and CI are in place, and the 12-document sample corpus is loaded and split into heading-aware chunks. Search is next.
 
 ## Quick start
 
@@ -38,13 +38,43 @@ uvicorn app.main:app --reload
 pytest
 ```
 
+## Corpus
+
+`corpus/` holds 12 sample Markdown docs: 4 API reference pages, 4 migration
+guides, and 4 changelog entries across versions v1, v2, and v3. Each file starts
+with YAML front-matter:
+
+```yaml
+---
+doc_id: api-users-create
+title: Create user
+product: Nimbus API
+doc_type: api-reference        # api-reference | migration-guide | changelog
+version: v3
+status: current                # current | superseded
+source_url: https://docs.nimbus.example/v3/users/create
+last_updated: 2026-10-12
+---
+```
+
+Load and chunk the corpus:
+
+```python
+from app.ingest import load_chunks
+
+chunks = load_chunks("corpus")   # 12 docs -> 60 chunks today
+```
+
+Each chunk carries its document's version, type, status, source URL, and section
+heading, so every later citation can name an exact source.
+
 ## Ten-day plan
 
 | Day | Feature | Status |
 |---|---|---|
 | 1 | Application scaffold, health endpoint, CI | Done |
-| 2 | Document ingestion and chunking | Next |
-| 3 | Keyword search (SQLite FTS5) and `/api/search` | Planned |
+| 2 | Document ingestion and chunking | Done |
+| 3 | Keyword search (SQLite FTS5) and `/api/search` | Next |
 | 4 | Search UI with source cards | Planned |
 | 5 | Grounded answer generation with citations | Planned |
 | 6 | Version and document-type filters | Planned |
