@@ -2,25 +2,20 @@
 
 Application entry point.
 
-Day 3 scope: the Day 1 scaffold plus keyword search. ``POST /api/search``
-returns BM25-ranked chunks with their citation metadata. Answer generation and
-the UI arrive later in the 10-day plan.
+Days 1-4: scaffold, ingestion, BM25 keyword search, and hybrid retrieval
+(embeddings + Chroma fused with BM25). Answer generation arrives on Day 5.
 """
-
-import os
-from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from app import __version__
-from app.search import QueryError, ensure_index, search
+from app.config import get_settings
+from app.retriever import ensure_ready, hybrid_search
+from app.search import QueryError
 
 APP_NAME = "VADA"
 APP_DESCRIPTION = "Version-aware answers over product documentation, with citations."
-
-INDEX_PATH = Path(os.getenv("VADA_DB_PATH", "data/index/vada.db"))
-CORPUS_DIR = Path(os.getenv("VADA_CORPUS_DIR", "corpus"))
 
 app = FastAPI(
     title="VADA API",
@@ -56,18 +51,21 @@ def root() -> dict:
 
 @app.post("/api/search", tags=["search"])
 def search_chunks(payload: SearchRequest) -> dict:
-    """Return the best-matching documentation chunks for a query.
+    """Return the best-matching chunks, fused from vector and keyword search.
 
-    Each result carries its document, version, section, and source URL so the
-    caller can render a citation without a second lookup.
+    Each result carries its document, version, section, and source URL, plus
+    ``matched_by`` so the caller can see which retriever found it.
     """
     if not payload.query.strip():
         raise HTTPException(status_code=400, detail="query must not be empty")
 
-    ensure_index(CORPUS_DIR, INDEX_PATH)
+    settings = get_settings()
+    ensure_ready(settings)
 
     try:
-        results = search(INDEX_PATH, payload.query, limit=payload.limit)
+        results = hybrid_search(
+            payload.query, limit=payload.limit, settings=settings
+        )
     except QueryError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except FileNotFoundError as exc:
@@ -75,6 +73,7 @@ def search_chunks(payload: SearchRequest) -> dict:
 
     return {
         "query": payload.query,
+        "mode": "hybrid" if settings.vectors_enabled else "keyword",
         "count": len(results),
         "results": [result.to_dict() for result in results],
     }
