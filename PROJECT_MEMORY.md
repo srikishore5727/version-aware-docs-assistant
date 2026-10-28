@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 28 October 2026 - Day 4 complete
+**Last updated:** 28 October 2026 - Day 5 complete
 
 ---
 
@@ -103,8 +103,8 @@ Planned additions: `app/answer.py`, `app/static/` (UI), `tests/golden_set.json`.
 | 2 | Document ingestion and chunking | **Done** |
 | 3 | SQLite FTS5 index, `/api/search` | **Done** |
 | 4 | Embeddings, Chroma, hybrid retrieval | **Done** |
-| 5 | Grounded answer generation, `/api/ask` | Next |
-| 6 | Search UI with source cards | Planned |
+| 5 | Grounded answer generation, `/api/ask` | **Done** |
+| 6 | Search UI with source cards | Next |
 | 7 | Answer panel and source cards | Planned |
 | 8 | Version filter | Planned |
 | 9 | Document-type filter | Planned |
@@ -166,67 +166,74 @@ pytest                          # run tests
 
 ---
 
-## 8. Current state (end of Day 4)
+## 8. Current state (end of Day 5)
 
 - `corpus/` has 12 sample Markdown docs across v1/v2/v3 (v3 `current`, v1/v2
   `superseded`). Ingestion produces 60 chunks with full citation metadata.
 - **Two indexes** exist for every chunk:
   - `data/index/vada.db` - SQLite FTS5, BM25 with title/section boosts
   - `data/index/chroma/` - Chroma collection, cosine, Gemini embeddings (768d)
-- **Hybrid retrieval** (`app/retriever.py`) queries both and fuses with
-  Reciprocal Rank Fusion (K=60). A vector failure silently falls back to BM25.
-- `POST /api/search` returns `{"query", "mode", "count", "results"}` where
-  `mode` is `hybrid` or `keyword`, and each result has `matched_by`
-  (`keyword` / `vector` / `both`).
-- Config comes from env + `.env`: `GEMINI_API_KEY`, `VADA_EMBEDDING_MODEL`,
-  `VADA_LLM_MODEL`, `VADA_EMBEDDINGS` (`gemini` / `hash` / `off`).
-- 42 tests pass locally (3 scaffold + 10 ingestion + 17 search + 12 hybrid).
-  Tests force `VADA_EMBEDDINGS=hash`, so CI never calls the network.
-- No UI, no filters, no answer generation yet.
+- **Hybrid retrieval** (`app/retriever.py`): Reciprocal Rank Fusion (K=60) of
+  both lists. A vector failure silently falls back to BM25.
+- **Grounded generation** (`app/answer.py`) is live behind `POST /api/ask`.
+  Gemini answers only from the numbered context; citations are validated in
+  code (`[1]` and grouped `[1, 3]`); one retry, then `not_found`.
+- `POST /api/search` returns `{"query", "mode", "count", "results"}`.
+  `POST /api/ask` returns `{"question", "mode", "status", "answer", "sources",
+  "model", "reason"}`.
+- Config from env + `.env`: `GEMINI_API_KEY`, `VADA_EMBEDDING_MODEL`
+  (`gemini-embedding-001`), `VADA_LLM_MODEL` (`gemini-3.1-flash-lite-preview`),
+  `VADA_EMBEDDINGS` (`gemini` / `hash` / `off`).
+- 60 tests pass locally (3 scaffold + 10 ingestion + 17 search + 12 hybrid +
+  18 answer). CI forces `VADA_EMBEDDINGS=hash` and a blank key, so it never
+  calls the network.
+- Verified live against Gemini: `display_name` replacement, `page=2` -> 400,
+  token expiry 60 minutes, rate-limit question -> `not_found`.
+- No UI and no filters yet.
 
-**Retrieval API (stable - build on this next):**
+**APIs (stable - build on these next):**
 
 ```python
 from app.retriever import build_index, hybrid_search
+from app.answer import generate_answer
 
 build_index()                                   # rebuild both indexes
-results = hybrid_search("how do I paginate users", limit=5)
+chunks = hybrid_search("how do I paginate users", limit=5)
+answer = generate_answer("how do I paginate users", chunks)   # Answer
 ```
 
 - `SearchResult` fields: `chunk_id, doc_id, title, doc_type, version, status,
   source_url, last_updated, section, text, score, matched_by`
-- `build_index()` prints/logs `{"chunks", "keyword", "vectors"}` counts.
-- Filters are not implemented yet; they arrive on Day 8 by passing `where` to
-  Chroma and a `WHERE` clause to FTS5.
+- `Answer` fields: `status, answer, sources, model, reason`; `sources` are
+  citation cards carrying `index` and the chunk metadata.
+- Filters are not implemented yet; Day 8 adds them to `hybrid_search`.
 
 ---
 
-## 9. Next task - Day 5: grounded answer generation with citations
+## 9. Next task - Day 6: search UI with source cards
 
-**Goal:** `POST /api/ask` returns a short answer that cites retrieved chunks, or
-`not_found`. This is the RAG generation half.
+**Goal:** a usable single page at `/` that searches the corpus, shows the
+grounded answer, and exposes the citation behind it.
 
 **Build**
 
-1. `app/answer.py`
-   - `build_prompt(question, chunks)` implementing the contract in
-     `docs/RAG_ARCHITECTURE.md` §6 (answer only from context, cite `[n]`,
-     reply `NOT_FOUND`, state the version, under 80 words).
-   - `answer_question(question, ...) -> Answer` with
-     `status` (`answered` / `not_found`), `answer`, `sources`, `model`.
-   - Gemini through the **OpenAI-compatible** endpoint
-     `https://generativelanguage.googleapis.com/v1beta/openai/` using the
-     `openai` SDK, model from `VADA_LLM_MODEL`, temperature 0.2, timeout 20 s.
-   - Validate citations in code: every `[n]` must map to a retrieved chunk.
-     Retry once, then return `not_found`. Never return an uncited answer.
-   - No key -> deterministic extractive fallback (top chunk's first sentences
-     plus `[1]`), so the demo and tests work offline.
-2. `POST /api/ask` in `app/main.py`: `{"question", "version"?, "doc_type"?}`.
-   `400` for empty question, `503` if retrieval is unavailable.
-3. Tests: prompt contains the rules, citation validation rejects bad markers,
-   `NOT_FOUND` maps to the not-found status, endpoint returns sources.
+1. Serve `app/static/` from FastAPI (`StaticFiles`), so `/` is the UI and
+   `/docs`, `/health`, `/api/*` keep working. Keep the JSON root metadata at
+   `/api` if it would otherwise be shadowed.
+2. Reuse the design tokens already approved in `mockups/design-system.html`
+   (ink `#111318`, indigo `#4F46E5`, 8px spacing scale) and the logo mark.
+   No Tailwind, no build step - plain HTML, CSS, and one `app.js`.
+3. Layout: brand row, one question input with submit, example-question chips,
+   then an answer panel followed by source cards.
+4. Call `POST /api/ask` and render:
+   - `answered`: answer text with `[n]` markers turned into links that scroll to
+     the matching source card; version badge on every card.
+   - `not_found`: a calm "not in the indexed docs" state, not an error toast.
+5. States: idle, loading (disable submit), answered, not found, network error.
+6. Keep it accessible: labels on inputs, focus rings, `aria-live` on results.
+7. Test that `/` returns HTML containing the form and that `/docs` still works.
 
-**Do not** build the UI on Day 5. That is Day 6.
+**Do not** add filters or confidence scoring on Day 6. Those are Days 8 and 14.
 
 ---
 
@@ -263,3 +270,4 @@ results = hybrid_search("how do I paginate users", limit=5)
 | 2 | 28 Oct 2026 | Sample corpus (12 docs) + ingestion and heading-aware chunking (`app/ingest.py`), 13 tests |
 | 3 | 28 Oct 2026 | SQLite FTS5 index + BM25 `POST /api/search` (`app/search.py`), 30 tests |
 | 4 | 28 Oct 2026 | Gemini embeddings + Chroma + hybrid RRF retrieval (`app/embeddings.py`, `vector_store.py`, `retriever.py`), 42 tests |
+| 5 | 28 Oct 2026 | Grounded answer generation with validated citations (`app/answer.py`, `POST /api/ask`), 60 tests |

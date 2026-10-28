@@ -2,14 +2,15 @@
 
 Application entry point.
 
-Days 1-4: scaffold, ingestion, BM25 keyword search, and hybrid retrieval
-(embeddings + Chroma fused with BM25). Answer generation arrives on Day 5.
+Days 1-5: scaffold, ingestion, BM25 keyword search, hybrid retrieval, and
+grounded answer generation with validated citations.
 """
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from app import __version__
+from app.answer import generate_answer
 from app.config import get_settings
 from app.retriever import ensure_ready, hybrid_search
 from app.search import QueryError
@@ -31,6 +32,13 @@ class SearchRequest(BaseModel):
     limit: int = Field(default=5, ge=1, le=20, description="Number of chunks to return")
 
 
+class AskRequest(BaseModel):
+    """Body of a question."""
+
+    question: str = Field(description="Natural-language question")
+    limit: int = Field(default=5, ge=1, le=10, description="Chunks given to the model")
+
+
 @app.get("/health", tags=["system"])
 def health() -> dict:
     """Liveness probe used by CI and the platform."""
@@ -46,16 +54,13 @@ def root() -> dict:
         "docs": "/docs",
         "health": "/health",
         "search": "/api/search",
+        "ask": "/api/ask",
     }
 
 
 @app.post("/api/search", tags=["search"])
 def search_chunks(payload: SearchRequest) -> dict:
-    """Return the best-matching chunks, fused from vector and keyword search.
-
-    Each result carries its document, version, section, and source URL, plus
-    ``matched_by`` so the caller can see which retriever found it.
-    """
+    """Return the best-matching chunks, fused from vector and keyword search."""
     if not payload.query.strip():
         raise HTTPException(status_code=400, detail="query must not be empty")
 
@@ -63,9 +68,7 @@ def search_chunks(payload: SearchRequest) -> dict:
     ensure_ready(settings)
 
     try:
-        results = hybrid_search(
-            payload.query, limit=payload.limit, settings=settings
-        )
+        results = hybrid_search(payload.query, limit=payload.limit, settings=settings)
     except QueryError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except FileNotFoundError as exc:
@@ -76,4 +79,33 @@ def search_chunks(payload: SearchRequest) -> dict:
         "mode": "hybrid" if settings.vectors_enabled else "keyword",
         "count": len(results),
         "results": [result.to_dict() for result in results],
+    }
+
+
+@app.post("/api/ask", tags=["answer"])
+def ask(payload: AskRequest) -> dict:
+    """Answer a question using only retrieved chunks, with validated citations.
+
+    Returns ``status: answered`` with source cards, or ``status: not_found``.
+    An answer that cites a chunk that was not retrieved is never returned.
+    """
+    if not payload.question.strip():
+        raise HTTPException(status_code=400, detail="question must not be empty")
+
+    settings = get_settings()
+    ensure_ready(settings)
+
+    try:
+        chunks = hybrid_search(payload.question, limit=payload.limit, settings=settings)
+    except QueryError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    answer = generate_answer(payload.question, chunks, settings=settings)
+
+    return {
+        "question": payload.question,
+        "mode": "hybrid" if settings.vectors_enabled else "keyword",
+        **answer.to_dict(),
     }

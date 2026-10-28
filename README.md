@@ -8,9 +8,9 @@ A software vendor maintains API references, migration guides, and changelogs acr
 
 ## Status
 
-**Sprint 2 · Day 4 of 20 — complete.**
+**Sprint 2 · Day 5 of 20 — complete.**
 
-Scaffold, corpus, chunking, BM25 search, and hybrid retrieval (Gemini embeddings + Chroma fused with BM25) are working. Answer generation is next.
+Scaffold, corpus, chunking, hybrid retrieval, and grounded answer generation with validated citations are working. The interface is next.
 
 ## Quick start
 
@@ -117,7 +117,48 @@ curl -X POST http://127.0.0.1:8000/api/search ^
 - An empty query returns `400`.
 - A query with no matches returns `count: 0` and an empty `results` list.
 
-## Ten-day plan
+## Ask
+
+`POST /api/ask` retrieves chunks, asks Gemini to answer using only those chunks,
+then validates every citation in code.
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/ask ^
+  -H "Content-Type: application/json" ^
+  -d "{\"question\": \"Which field replaced user_name in v3?\"}"
+```
+
+```json
+{
+  "question": "Which field replaced user_name in v3?",
+  "status": "answered",
+  "answer": "In v3, the `display_name` field replaced `user_name` [3].",
+  "sources": [
+    {
+      "index": 3,
+      "title": "Create user",
+      "doc_type": "api-reference",
+      "version": "v3",
+      "section": "Request body",
+      "source_url": "https://docs.nimbus.example/v3/users/create"
+    }
+  ],
+  "model": "gemini-3.1-flash-lite-preview",
+  "reason": "",
+  "mode": "hybrid"
+}
+```
+
+Behaviour:
+
+- `status: not_found` when no chunk matches, the model refuses, or citations
+  cannot be verified. A failed answer is never returned.
+- Citations are checked in code: `[n]` must refer to a retrieved chunk, and
+  grouped forms like `[1, 3]` are supported.
+- Without an API key the endpoint returns a verbatim quote from the top chunk
+  plus `[1]`, with `"model": "extractive"`.
+
+## 20-day plan
 
 | Day | Feature | Status |
 |---|---|---|
@@ -125,8 +166,8 @@ curl -X POST http://127.0.0.1:8000/api/search ^
 | 2 | Document ingestion and chunking | Done |
 | 3 | Keyword search (SQLite FTS5) and `/api/search` | Done |
 | 4 | Embeddings, Chroma, hybrid retrieval | Done |
-| 5 | Grounded answer generation with citations | Next |
-| 6 | Search UI with source cards | Planned |
+| 5 | Grounded answer generation with citations | Done |
+| 6 | Search UI with source cards | Next |
 | 7 | Answer panel and source cards | Planned |
 | 8 | Version filter | Planned |
 | 9 | Document-type filter | Planned |

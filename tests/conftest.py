@@ -14,3 +14,6 @@ TEST_ROOT = Path(tempfile.mkdtemp(prefix="vada-tests-"))
 os.environ.setdefault("VADA_EMBEDDINGS", "hash")
 os.environ.setdefault("VADA_DB_PATH", str(TEST_ROOT / "vada.db"))
 os.environ.setdefault("VADA_CHROMA_DIR", str(TEST_ROOT / "chroma"))
+
+# Force the offline answer path: tests must never call Gemini.
+os.environ["GEMINI_API_KEY"] = ""
