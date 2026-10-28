@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 28 October 2026 - Day 2 complete
+**Last updated:** 28 October 2026 - Day 3 complete
 
 ---
 
@@ -65,12 +65,15 @@ version-aware-docs-assistant/
 ├── .github/workflows/ci.yml   CI: install deps and run pytest
 ├── app/
 │   ├── __init__.py            Version constant
-│   ├── main.py                FastAPI app: /health and /
-│   └── ingest.py              Front-matter parser, corpus loader, chunker
+│   ├── main.py                FastAPI app: /health, /, /api/search
+│   ├── ingest.py              Front-matter parser, corpus loader, chunker
+│   └── search.py              FTS5 index build, query building, BM25 search
 ├── corpus/                    12 sample Markdown docs (api-reference, migration-guide, changelog)
+├── data/index/vada.db         Generated search index (gitignored)
 ├── tests/
 │   ├── test_health.py         Tests for the scaffold
-│   └── test_ingest.py         Tests for parsing, loading, and chunking
+│   ├── test_ingest.py         Tests for parsing, loading, and chunking
+│   └── test_search.py         Tests for query building, ranking, and the endpoint
 ├── docs/
 │   └── PRD.md                 Product requirements (v1.0)
 ├── mockups/                   UX mockup, brand guidelines, design system (static, deployed)
@@ -80,8 +83,7 @@ version-aware-docs-assistant/
 └── PROJECT_MEMORY.md          This file
 ```
 
-Planned additions: `app/search.py`, `app/answer.py`, `app/static/` (UI),
-`tests/golden_set.json`.
+Planned additions: `app/answer.py`, `app/static/` (UI), `tests/golden_set.json`.
 
 ---
 
@@ -91,8 +93,8 @@ Planned additions: `app/search.py`, `app/answer.py`, `app/static/` (UI),
 |---|---|---|
 | 1 | App scaffold, `/health`, CI | **Done** |
 | 2 | Document ingestion and chunking | **Done** |
-| 3 | SQLite FTS5 index, `/api/search` | Next |
-| 4 | Search UI with source cards | Planned |
+| 3 | SQLite FTS5 index, `/api/search` | **Done** |
+| 4 | Search UI with source cards | Next |
 | 5 | Grounded answer generation with citations | Planned |
 | 6 | Version and document-type filters | Planned |
 | 7 | Superseded-document handling | Planned |
@@ -107,8 +109,8 @@ Planned additions: `app/search.py`, `app/answer.py`, `app/static/` (UI),
 **Branches**
 
 ```
-feat/03-bm25-search
 feat/04-search-ui
+feat/05-grounded-answers
 fix/<short-description>
 docs/<short-description>
 ```
@@ -116,9 +118,9 @@ docs/<short-description>
 **Commits** - Conventional Commits:
 
 ```
-feat: add corpus loader and chunker
+feat: add FTS5 index and search endpoint
 fix: correct version filter on search endpoint
-docs: update project memory for day 3
+docs: update project memory for day 4
 test: add golden-set evaluation
 ```
 
@@ -146,58 +148,64 @@ pytest                          # run tests
 
 ---
 
-## 8. Current state (end of Day 2)
+## 8. Current state (end of Day 3)
 
-- FastAPI app starts and serves `/health` and `/`.
-- CI workflow runs on every push and pull request to `main`.
 - `corpus/` has 12 sample Markdown docs: 4 api-reference, 4 migration-guide,
   4 changelog, across v1/v2/v3. v3 docs are `current`; v1 and v2 are `superseded`.
-- `app/ingest.py` parses YAML front-matter, loads documents, and splits them into
-  heading-aware overlapping chunks. 12 docs currently produce 60 chunks.
-- `pyyaml==6.0.2` added to `requirements.txt`.
-- 13 tests pass locally (3 scaffold + 10 ingestion) and in CI.
-- No search index, no endpoints beyond `/health` and `/`, no UI, no answering yet.
+- `app/ingest.py` parses YAML front-matter and splits docs into heading-aware
+  overlapping chunks. 12 docs produce 60 chunks.
+- `app/search.py` builds a SQLite FTS5 index (porter stemming, BM25 with title
+  and section boosted) and returns ranked chunks with full citation metadata.
+- `POST /api/search` is live: `{"query": str, "limit": 5}` ->
+  `{"query", "count", "results": [...]}`. Empty/wordless query -> `400`,
+  no matches -> `count: 0` with an empty list.
+- The index builds itself on first search, or via `python -m app.search`.
+  Generated file: `data/index/vada.db` (gitignored).
+- 30 tests pass locally (3 scaffold + 10 ingestion + 17 search) and in CI.
+- No UI, no filters, no answer generation yet.
 
-**Ingestion API (stable - build on this next):**
+**Search API (stable - build on this next):**
 
 ```python
-from app.ingest import load_chunks, load_documents
+from app.search import search, reindex, ensure_index
 
-docs = load_documents("corpus")            # list[Document]
-chunks = load_chunks("corpus", size=500, overlap=80)   # list[Chunk]
+reindex("corpus", "data/index/vada.db")          # force rebuild, returns chunk count
+results = search("data/index/vada.db", "how do I paginate users", limit=5)
 ```
 
-- `Document` fields: `doc_id, title, product, doc_type, version, status,
-  source_url, last_updated, body, path`
-- `Chunk` fields: `chunk_id ("<doc_id>::<n>"), doc_id, title, doc_type, version,
-  status, source_url, last_updated, section, text, position`
-- Missing `version` / `doc_type` default to `unknown`; missing `status` defaults to `current`.
-- Raises `IngestionError` on unclosed front-matter, missing `doc_id`/`title`, or duplicate `doc_id`.
+- `SearchResult` fields: `chunk_id, doc_id, title, doc_type, version, status,
+  source_url, last_updated, section, text, score` (`score` = `-bm25`, higher is better)
+- `build_match_query()` lowercases, strips stopwords, quotes every token, and ORs
+  them, so user punctuation cannot produce an FTS5 syntax error.
+- Raises `QueryError` when a query has no searchable words.
+- Every chunk row is stored with its version/type, so Day 6 filters are a
+  `WHERE version = ?` addition rather than a re-index.
 
 ---
 
-## 9. Next task - Day 3: keyword search with SQLite FTS5
+## 9. Next task - Day 4: search UI with source cards
 
-**Goal:** index chunks and return ranked results for a query.
+**Goal:** a usable single page that searches the corpus and shows the citation
+behind every result.
 
 **Build**
 
-1. `app/search.py`
-   - `build_index(chunks, db_path)` - create an FTS5 table over `chunk.text`
-     plus metadata columns (doc_id, version, doc_type, status, section, source_url)
-   - `search(query, db_path, limit=10)` - BM25-ranked (`ORDER BY rank`),
-     return chunk text plus citation metadata
-   - Escape / quote user input safely for FTS5 (avoid syntax errors on `-`, `"`, etc.)
-2. `POST /api/search` (or `GET /api/search?q=`) in `app/main.py`
-   - Request: `{"query": str, "limit": int = 10}`
-   - Response: `{"query": ..., "results": [{"chunk_id", "text", "score",
-     "doc_id", "title", "doc_type", "version", "section", "source_url"}]}`
-   - Empty or whitespace query returns `400`
-3. Rebuild the index on startup if it is missing (in-memory or `data/index.db`).
-4. Tests: index build, ranked ordering, metadata passthrough, no-match returns
-   empty list, punctuation-heavy query does not crash.
+1. `app/static/index.html` (+ `app.css`, `app.js`) served by FastAPI at `/`.
+   Reuse the design-system tokens from `mockups/design-system.html`
+   (ink `#111318`, indigo `#4F46E5`, neutral greys, 8px spacing scale).
+2. Layout: logo mark (`mockups/brand/logo-mark.svg`), one search input with a
+   submit button, example-question chips, and a results area.
+3. Results: one card per chunk showing title, section, a version badge
+   (`v3` current / `v2` superseded), document type, `last_updated`, a short text
+   excerpt, and a link to `source_url` opening in a new tab.
+4. States: idle (examples), loading (skeleton or spinner), results, no results
+   ("No matches in the indexed docs" - refined on Day 8).
+5. Wire it to `POST /api/search` with `fetch`, `limit: 5`. Debounce not needed;
+   submit on Enter or button click. Do not store the previous query in history.
+6. Keep the JSON endpoints intact and add a test that `/` serves HTML containing
+   the search form.
 
-**Do not** add the answer generator or UI on Day 3. Filters are Day 6.
+**Do not** add LLM answers or filters on Day 4. The answer panel is Day 5.
 
 ---
 
@@ -230,3 +238,4 @@ chunks = load_chunks("corpus", size=500, overlap=80)   # list[Chunk]
 | 0 | 26 Oct 2026 | PRD v1.0 merged; UX mockup, brand guidelines, design system deployed |
 | 1 | 27 Oct 2026 | FastAPI scaffold, `/health`, tests, CI |
 | 2 | 28 Oct 2026 | Sample corpus (12 docs) + ingestion and heading-aware chunking (`app/ingest.py`), 13 tests |
+| 3 | 28 Oct 2026 | SQLite FTS5 index + BM25 `POST /api/search` (`app/search.py`), 30 tests |
