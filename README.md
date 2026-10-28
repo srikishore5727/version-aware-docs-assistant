@@ -8,10 +8,11 @@ A software vendor maintains API references, migration guides, and changelogs acr
 
 ## Status
 
-**Sprint 2 · Day 6 of 20 — complete.**
+**Sprint 2 · Day 7 of 20 — complete.**
 
 Scaffold, corpus, chunking, hybrid retrieval, grounded answers with validated
-citations, and the search UI are working. The answer panel is next.
+citations, and the answer UI with linked source cards are working. Version
+filters are next.
 
 ## Quick start
 
@@ -162,16 +163,19 @@ Behaviour:
 
 ## Interface
 
-Open <http://127.0.0.1:8000/> for the search UI. It is plain HTML, CSS, and one
+Open <http://127.0.0.1:8000/> for the app. It is plain HTML, CSS, and one
 JavaScript file served from `app/static/`, styled with the approved brand
 tokens - no build step.
 
-- One question box, example chips, and one card per retrieved chunk.
-- Every card shows the version, whether it is `current` or `superseded`, the
-  document type, the section, the last-updated date, an excerpt, and a link to
-  the exact source page.
-- The card footer names how the chunk was found (`keyword`, `vector`, or both).
-- States: idle, loading, results, no matches, and a network error.
+- One question box, example chips, an answer panel, then the source cards.
+- Every `[n]` in the answer is a link: it jumps to the card it cites, which is
+  briefly outlined so the evidence is obvious.
+- Every card shows its citation number, version, `current` / `superseded`
+  status, document type, section, last-updated date, an excerpt with the
+  evidence text, and a link to the exact source page.
+- `status: not_found` renders a calm "not found" panel instead of an error.
+- If `/api/ask` is unreachable the page falls back to `/api/search`, so you
+  still get the matching documents.
 - The JSON service map moved to `/api`; `/health`, `/docs`, and `/api/*` are
   unchanged.
 
@@ -185,8 +189,8 @@ tokens - no build step.
 | 4 | Embeddings, Chroma, hybrid retrieval | Done |
 | 5 | Grounded answer generation with citations | Done |
 | 6 | Search UI with source cards | Done |
-| 7 | Answer panel and citation links | Next |
-| 8 | Version filter | Planned |
+| 7 | Answer panel and citation links | Done |
+| 8 | Version filter | Next |
 | 9 | Document-type filter | Planned |
 | 10 | Superseded-document handling | Planned |
 | 11 | Not-found and low-confidence path | Planned |

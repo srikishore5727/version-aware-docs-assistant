@@ -123,6 +123,8 @@ def sources_for(chunks: list[SearchResult], numbers: list[int]) -> list[dict]:
                 "section": chunk.section,
                 "source_url": chunk.source_url,
                 "last_updated": chunk.last_updated,
+                # The UI renders this so a citation card can show its evidence.
+                "text": chunk.text,
             }
         )
     return sources

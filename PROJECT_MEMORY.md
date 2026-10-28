@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 28 October 2026 - Day 6 complete
+**Last updated:** 28 October 2026 - Day 7 complete
 
 ---
 
@@ -109,8 +109,8 @@ Planned additions: `tests/golden_set.json`, `app/metrics.py`.
 | 4 | Embeddings, Chroma, hybrid retrieval | **Done** |
 | 5 | Grounded answer generation, `/api/ask` | **Done** |
 | 6 | Search UI with source cards | **Done** |
-| 7 | Answer panel and citation links | Next |
-| 8 | Version filter | Planned |
+| 7 | Answer panel and citation links | **Done** |
+| 8 | Version filter | Next |
 | 9 | Document-type filter | Planned |
 | 10 | Superseded-document handling | Planned |
 | 11 | Not-found and low-confidence path | Planned |
@@ -170,7 +170,7 @@ pytest                          # run tests
 
 ---
 
-## 8. Current state (end of Day 6)
+## 8. Current state (end of Day 7)
 
 - `corpus/` has 12 sample Markdown docs across v1/v2/v3 (v3 `current`, v1/v2
   `superseded`). Ingestion produces 60 chunks with full citation metadata.
@@ -182,22 +182,23 @@ pytest                          # run tests
 - **Grounded generation** (`app/answer.py`) is live behind `POST /api/ask`.
   Gemini answers only from the numbered context; citations are validated in
   code (`[1]` and grouped `[1, 3]`); one retry, then `not_found`.
-- **Search UI** at `/` (`app/static/`): plain HTML/CSS/JS, brand tokens, card
-  per chunk with version/status/type/section/date/excerpt/source link. Calls
-  `POST /api/search` with `limit: 5`. States: idle, loading, results, empty,
-  error. `StaticFiles` is mounted **last** so API routes win; JSON metadata
-  moved to `/api`.
-- `POST /api/search` returns `{"query", "mode", "count", "results"}`.
-  `POST /api/ask` returns `{"question", "mode", "status", "answer", "sources",
-  "model", "reason"}`.
+- **Answer UI** at `/`: the page calls `POST /api/ask`, renders an answer panel
+  with `[n]` markers as links, then one source card per citation
+  (`id="source-n"`, `:target` outline). `status: not_found` renders a "Not
+  found" panel with a plain-language reason. A failed ask falls back to
+  `POST /api/search`. `StaticFiles` is mounted last so API routes win; JSON
+  metadata lives at `/api`.
+- `sources[]` from `/api/ask` now includes the chunk `text`, so a citation card
+  can show its evidence without a second request.
 - Config from env + `.env`: `GEMINI_API_KEY`, `VADA_EMBEDDING_MODEL`
   (`gemini-embedding-001`), `VADA_LLM_MODEL` (`gemini-3.1-flash-lite-preview`),
   `VADA_EMBEDDINGS` (`gemini` / `hash` / `off`).
-- 65 tests pass locally (3 scaffold + 10 ingestion + 17 search + 12 hybrid +
-  18 answer + 5 UI). CI forces `VADA_EMBEDDINGS=hash` and a blank key.
+- 66 tests pass locally (3 scaffold + 10 ingestion + 17 search + 12 hybrid +
+  18 answer + 6 UI). CI forces `VADA_EMBEDDINGS=hash` and a blank key.
 - **Known gap:** vector search always returns `limit` neighbours, so a nonsense
-  query still shows cards. The UI's empty state only triggers in keyword mode
-  today; Day 11 adds the relevance floor that makes `not_found` reachable.
+  query still retrieves cards. The "not found" state currently comes from the
+  model refusing or from unverifiable citations; Day 11 adds the similarity
+  floor that makes it reachable for pure retrieval misses.
 
 **APIs (stable - build on these next):**
 
@@ -212,36 +213,35 @@ answer = generate_answer("how do I paginate users", chunks)   # Answer
 
 - `SearchResult` fields: `chunk_id, doc_id, title, doc_type, version, status,
   source_url, last_updated, section, text, score, matched_by`
-- `Answer` fields: `status, answer, sources, model, reason`; `sources` are
-  citation cards carrying `index` and the chunk metadata.
+- `Answer` fields: `status, answer, sources, model, reason`; each source
+  carries `index`, the citation metadata, and its `text`.
 - Filters are not implemented yet; Day 8 adds them to `hybrid_search`.
 
 ---
 
-## 9. Next task - Day 7: answer panel with citation links
+## 9. Next task - Day 8: version filter
 
-**Goal:** put the grounded answer above the source cards, and make every `[n]`
-marker in the answer jump to the card it cites.
+**Goal:** let the user restrict a question to one API version, end to end: API,
+retrieval, and UI.
 
 **Build**
 
-1. In `app/static/index.html`, add an answer panel inside `#results` (before the
-   card list) with: a status line ("Answered for v3"), the answer body, and a
-   model/mode footnote.
-2. `app.js`: call `POST /api/ask` instead of `/api/search` (same query, same
-   limit). Render `status: answered` -> answer text + `sources` cards;
-   `status: not_found` -> calm empty state with the reason, not an error.
-3. Turn `[1]` and `[1, 3]` in the answer into `<a href="#source-1">` links.
-   Build them with DOM nodes (text split on `/(\[\d+(?:\s*,\s*\d+)*\])/`), never
-   `innerHTML`, and give each source card `id="source-n"` plus a
-   `:target` highlight style.
-4. Keep `/api/search` and the existing cards reachable: if the answer fails to
-   load, still show retrieval results rather than nothing.
-5. Keep the loading skeleton, `aria-busy`, and `aria-live` behaviour.
-6. Tests: `/` HTML contains `id="answer"`; a unit test for the citation-split
-   helper if it moves into Python; endpoint contract stays covered.
+1. `app/search.py`: `search(db_path, query, limit, version=None)` adds
+   `AND c.version = ?` to the SQL when a version is given. Keep the existing
+   call signature working (keyword args only for the new parameter).
+2. `app/retriever.py`: `hybrid_search(..., version=None)` passes it to BM25 and
+   to Chroma as `where={"version": version}`. Validate the value against the
+   known versions (`v1`, `v2`, `v3`) and raise `QueryError` for anything else.
+3. `app/main.py`: `SearchRequest` and `AskRequest` gain
+   `version: str | None = None`; pass it through; echo it in the response.
+4. UI: a labelled `<select id="version">` ("All versions", v3, v2, v1) beside
+   the question box; send `version` only when a value is chosen; the answer
+   meta line names the version scope.
+5. Tests: version filter returns only that version from both retrievers,
+   unknown version -> `400`, unfiltered results unchanged, UI HTML contains the
+   select.
 
-**Do not** add filters, tone controls, or confidence scores on Day 7.
+**Do not** add the doc-type filter (Day 9) or superseded ranking (Day 10).
 
 ---
 
@@ -280,3 +280,4 @@ marker in the answer jump to the card it cites.
 | 4 | 28 Oct 2026 | Gemini embeddings + Chroma + hybrid RRF retrieval (`app/embeddings.py`, `vector_store.py`, `retriever.py`), 42 tests |
 | 5 | 28 Oct 2026 | Grounded answer generation with validated citations (`app/answer.py`, `POST /api/ask`), 60 tests |
 | 6 | 28 Oct 2026 | Search UI with source cards (`app/static/`, `StaticFiles`, `/api` metadata), 65 tests |
+| 7 | 28 Oct 2026 | Answer panel with linked citations (`/api/ask` in the UI, `:target` source cards, retrieval fallback), 66 tests |

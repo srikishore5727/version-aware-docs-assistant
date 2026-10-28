@@ -1,4 +1,4 @@
-/* VADA search UI - one form, one endpoint, no framework. */
+/* VADA UI - one question box, one answer, and the sources behind it. */
 (function () {
   "use strict";
 
@@ -7,8 +7,20 @@
   var submit = document.getElementById("submit");
   var chips = document.getElementById("chips");
   var results = document.getElementById("results");
+  var hint = document.getElementById("hint");
+  var answerBox = document.getElementById("answer");
+  var cardBox = document.getElementById("cards");
   var modeBadge = document.getElementById("mode");
   var limit = 5;
+  var CITATION_RE = /(\[\d+(?:\s*,\s*\d+)*\])/g;
+
+  var REASONS = {
+    model_not_found: "Nothing in the indexed documentation answers this question.",
+    no_matches: "No indexed document matched this question.",
+    invalid_citations:
+      "The draft answer could not be traced to a retrieved source, so it was withheld.",
+    generation_failed: "The language model was unavailable, so no generated answer is shown.",
+  };
 
   function el(tag, className, text) {
     var node = document.createElement(tag);
@@ -28,6 +40,39 @@
         fragment.appendChild(document.createTextNode(part));
       }
     });
+    return fragment;
+  }
+
+  /* Turn [1] and [1, 3] into links to the matching source cards. */
+  function citationText(text) {
+    var fragment = document.createDocumentFragment();
+
+    text.split(CITATION_RE).forEach(function (part) {
+      if (!part) return;
+
+      var group = part.match(/^\[([\d,\s]+)\]$/);
+      if (!group) {
+        fragment.appendChild(richText(part));
+        return;
+      }
+
+      fragment.appendChild(document.createTextNode("["));
+      group[1]
+        .split(",")
+        .map(function (value) {
+          return value.trim();
+        })
+        .filter(Boolean)
+        .forEach(function (number, position) {
+          if (position > 0) fragment.appendChild(document.createTextNode(", "));
+          var link = el("a", "cite", number);
+          link.href = "#source-" + number;
+          link.setAttribute("aria-label", "Jump to source " + number);
+          fragment.appendChild(link);
+        });
+      fragment.appendChild(document.createTextNode("]"));
+    });
+
     return fragment;
   }
 
@@ -68,8 +113,18 @@
     submit.textContent = isBusy ? "Searching" : "Search";
   }
 
-  function clearResults() {
-    while (results.firstChild) results.removeChild(results.firstChild);
+  function setHint(text) {
+    hint.textContent = text;
+    hint.hidden = false;
+  }
+
+  function reset() {
+    hint.hidden = true;
+    hint.textContent = "";
+    answerBox.hidden = true;
+    answerBox.className = "answer";
+    answerBox.textContent = "";
+    cardBox.textContent = "";
   }
 
   function showMode(mode) {
@@ -78,107 +133,165 @@
     modeBadge.hidden = false;
   }
 
-  function sourceCard(result) {
+  function sourceCard(source) {
     var item = el("li", "card");
+    item.id = "source-" + source.index;
 
     var top = el("div", "card__top");
-    top.appendChild(el("span", "badge badge--version", result.version || "unknown"));
-    if (result.status) {
+    top.appendChild(el("span", "card__cite", String(source.index)));
+    top.appendChild(el("span", "badge badge--version", source.version || "unknown"));
+    if (source.status) {
       var statusClass =
-        result.status === "current" ? "badge badge--current" : "badge badge--superseded";
-      top.appendChild(el("span", statusClass, result.status));
+        source.status === "current" ? "badge badge--current" : "badge badge--superseded";
+      top.appendChild(el("span", statusClass, source.status));
     }
-    top.appendChild(el("span", "card__type", result.doc_type || "doc"));
+    top.appendChild(el("span", "card__type", source.doc_type || "doc"));
     item.appendChild(top);
 
-    item.appendChild(el("h2", "card__title", result.title || result.doc_id));
+    item.appendChild(el("h2", "card__title", source.title || source.doc_id));
 
-    var meta = [result.section, result.last_updated ? "Updated " + result.last_updated : ""]
+    var meta = [source.section, source.last_updated ? "Updated " + source.last_updated : ""]
       .filter(Boolean)
       .join(" - ");
     item.appendChild(el("p", "card__meta", meta));
 
     var body = el("p", "card__text");
-    body.appendChild(richText(excerpt(result.text)));
+    body.appendChild(richText(excerpt(source.text)));
     item.appendChild(body);
 
     var foot = el("div", "card__foot");
     var link = el("a", "card__link", "Open source");
-    link.href = result.source_url;
+    link.href = source.source_url;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
-    link.setAttribute("aria-label", "Open source: " + (result.title || result.doc_id));
+    link.setAttribute("aria-label", "Open source: " + (source.title || source.doc_id));
     foot.appendChild(link);
-
-    var via = el("span", "card__score");
-    via.textContent =
-      result.matched_by === "both"
-        ? "keyword + vector"
-        : (result.matched_by || "keyword") + " match";
-    foot.appendChild(via);
+    foot.appendChild(el("span", "card__score", "cited as [" + source.index + "]"));
     item.appendChild(foot);
 
     return item;
   }
 
-  function renderResults(data, query) {
-    clearResults();
-    showMode(data.mode);
+  function renderSources(sources) {
+    var list = el("ul", "cards");
+    sources.forEach(function (source) {
+      list.appendChild(sourceCard(source));
+    });
+    cardBox.appendChild(list);
+  }
 
-    var summary = el("div", "summary");
-    var count = el("span");
-    count.appendChild(el("strong", null, String(data.count)));
-    count.appendChild(
-      document.createTextNode(
-        " " + (data.count === 1 ? "result" : "results") + " for \u201c" + query + "\u201d",
+  function answerPanel(kind, body, meta, footText) {
+    answerBox.className = "answer answer--" + (kind === "answered" ? "ok" : "miss");
+    answerBox.textContent = "";
+
+    var head = el("div", "answer__head");
+    head.appendChild(
+      el(
+        "span",
+        kind === "answered" ? "badge badge--answered" : "badge badge--miss",
+        kind === "answered" ? "Answered" : "Not found",
       ),
     );
-    summary.appendChild(count);
-    summary.appendChild(el("span", null, "versioned documentation"));
-    results.appendChild(summary);
+    if (meta) head.appendChild(el("span", "answer__meta", meta));
+    answerBox.appendChild(head);
 
-    if (!data.results || data.results.length === 0) {
-      var empty = el("div", "empty");
-      empty.appendChild(el("h2", null, "No matches in the indexed docs"));
-      empty.appendChild(
-        el(
-          "p",
-          null,
-          "Try different wording. The corpus covers users, authentication, pagination, webhooks, errors, and rate limits.",
-        ),
+    var paragraph = el("p", "answer__body");
+    if (typeof body === "string") {
+      paragraph.textContent = body;
+    } else {
+      paragraph.appendChild(body);
+    }
+    answerBox.appendChild(paragraph);
+
+    if (footText) answerBox.appendChild(el("p", "answer__foot", footText));
+    answerBox.hidden = false;
+  }
+
+  function renderAnswer(data, query) {
+    reset();
+    showMode(data.mode);
+
+    var sources = data.sources || [];
+
+    if (data.status !== "answered") {
+      setHint("No verified answer for \u201c" + query + "\u201d");
+      answerPanel(
+        "not_found",
+        REASONS[data.reason] || REASONS.model_not_found,
+        "",
+        "The answer was withheld rather than guessed.",
       );
-      results.appendChild(empty);
       return;
     }
 
-    var list = el("ul", "cards");
-    data.results.forEach(function (result) {
-      list.appendChild(sourceCard(result));
-    });
-    results.appendChild(list);
-  }
-
-  function renderError() {
-    clearResults();
-    var box = el("div", "empty");
-    box.appendChild(el("h2", "error", "The search service did not respond"));
-    box.appendChild(
-      el("p", null, "Check that the API is running, then try again. No results were changed."),
+    setHint(
+      sources.length +
+        (sources.length === 1 ? " source" : " sources") +
+        " for \u201c" +
+        query +
+        "\u201d",
     );
-    results.appendChild(box);
+
+    var versions = sources
+      .map(function (source) {
+        return source.version;
+      })
+      .filter(function (version, index, all) {
+        return version && all.indexOf(version) === index;
+      })
+      .join(", ");
+
+    answerPanel(
+      "answered",
+      citationText(data.answer),
+      [versions, data.mode === "hybrid" ? "hybrid" : "keyword"].filter(Boolean).join(" \u00b7 "),
+      (data.model || "extractive") + " \u00b7 every claim is cited",
+    );
+    renderSources(sources);
   }
 
   function renderLoading() {
-    clearResults();
-    var summary = el("div", "summary");
-    summary.appendChild(el("span", null, "Searching the documentation..."));
-    results.appendChild(summary);
+    reset();
+    setHint("Reading the documentation...");
 
     var list = el("div", "cards");
-    for (var i = 0; i < 3; i += 1) {
+    for (var i = 0; i < 2; i += 1) {
       list.appendChild(el("div", "skeleton"));
     }
-    results.appendChild(list);
+    cardBox.appendChild(list);
+  }
+
+  function renderFailure() {
+    reset();
+    setHint("The service did not respond");
+
+    var empty = el("div", "empty");
+    empty.appendChild(el("h2", "error", "Something went wrong"));
+    empty.appendChild(
+      el("p", null, "Check that the API is running, then try again. Nothing was saved."),
+    );
+    cardBox.appendChild(empty);
+  }
+
+  /* If /api/ask is unavailable, fall back to plain retrieval so the page is
+     still useful instead of blank. */
+  async function fallbackSearch(query) {
+    try {
+      var response = await fetch("/api/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: query, limit: limit }),
+      });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+
+      var data = await response.json();
+      reset();
+      showMode(data.mode);
+      setHint("Answer unavailable - showing " + data.count + " matching documents instead");
+      renderSources(data.results || []);
+    } catch (error) {
+      renderFailure();
+    }
   }
 
   async function search(query) {
@@ -186,17 +299,17 @@
     renderLoading();
 
     try {
-      var response = await fetch("/api/search", {
+      var response = await fetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: query, limit: limit }),
+        body: JSON.stringify({ question: query, limit: limit }),
       });
 
       if (!response.ok) throw new Error("HTTP " + response.status);
 
-      renderResults(await response.json(), query);
+      renderAnswer(await response.json(), query);
     } catch (error) {
-      renderError();
+      await fallbackSearch(query);
     } finally {
       setBusy(false);
     }
