@@ -8,9 +8,9 @@ A software vendor maintains API references, migration guides, and changelogs acr
 
 ## Status
 
-**Sprint 2 · Day 3 of 10 — complete.**
+**Sprint 2 · Day 4 of 20 — complete.**
 
-Application scaffold, sample corpus, heading-aware chunking, and BM25 keyword search are in place. `POST /api/search` returns ranked chunks with citation metadata. The UI is next.
+Scaffold, corpus, chunking, BM25 search, and hybrid retrieval (Gemini embeddings + Chroma fused with BM25) are working. Answer generation is next.
 
 ## Quick start
 
@@ -26,6 +26,7 @@ python -m venv .venv
 source .venv/bin/activate
 
 pip install -r requirements.txt
+cp .env.example .env       # add GEMINI_API_KEY for hybrid mode
 uvicorn app.main:app --reload
 ```
 
@@ -70,12 +71,17 @@ heading, so every later citation can name an exact source.
 
 ## Search
 
-Chunks are indexed in SQLite FTS5 and ranked with BM25. The index builds itself
-on the first search, or rebuild it explicitly:
+Chunks are indexed twice: a SQLite FTS5 keyword index and a Chroma vector
+index built from Gemini embeddings. Queries hit both and are merged with
+Reciprocal Rank Fusion, so paraphrases and exact identifiers both work.
 
 ```bash
-python -m app.search            # 60 chunks -> data/index/vada.db
+python -m app.retriever          # rebuild both indexes (60 chunks)
 ```
+
+Without an API key the app runs in keyword-only mode; with `GEMINI_API_KEY`
+set it returns `"mode": "hybrid"`. Each result includes `matched_by`
+(`keyword`, `vector`, or `both`).
 
 Query it:
 
@@ -118,20 +124,29 @@ curl -X POST http://127.0.0.1:8000/api/search ^
 | 1 | Application scaffold, health endpoint, CI | Done |
 | 2 | Document ingestion and chunking | Done |
 | 3 | Keyword search (SQLite FTS5) and `/api/search` | Done |
-| 4 | Search UI with source cards | Next |
-| 5 | Grounded answer generation with citations | Planned |
-| 6 | Version and document-type filters | Planned |
-| 7 | Superseded-document handling | Planned |
-| 8 | Not-found and low-confidence path | Planned |
-| 9 | Golden-set evaluation in CI | Planned |
-| 10 | Polish, docs, and v1.0.0 release | Planned |
+| 4 | Embeddings, Chroma, hybrid retrieval | Done |
+| 5 | Grounded answer generation with citations | Next |
+| 6 | Search UI with source cards | Planned |
+| 7 | Answer panel and source cards | Planned |
+| 8 | Version filter | Planned |
+| 9 | Document-type filter | Planned |
+| 10 | Superseded-document handling | Planned |
+| 11 | Not-found and low-confidence path | Planned |
+| 12 | Golden-set evaluation harness | Planned |
+| 13 | Evaluation in CI | Planned |
+| 14 | Confidence and explanation panel | Planned |
+| 15 | Logging and metrics | Planned |
+| 16 | Answer feedback capture | Planned |
+| 17 | Index refresh job | Planned |
+| 18 | Accessibility and dark mode | Planned |
+| 19 | Performance tuning | Planned |
+| 20 | v1.0.0 release | Planned |
 
 ## Documentation
 
 - [Product requirements](docs/PRD.md)
 - [RAG architecture](docs/RAG_ARCHITECTURE.md) - pipeline, prompt contract, failure behaviour
-- [Project memory](PROJECT_MEMORY.md) - read this before continuing the build
-- [UX mockup](https://srikishore5727.github.io/version-aware-docs-assistant/ux-mockup.html)
+- [Project memory](PROJECT_MEMORY.md) - read this before continuing the build- [UX mockup](https://srikishore5727.github.io/version-aware-docs-assistant/ux-mockup.html)
 - [Brand guidelines](https://srikishore5727.github.io/version-aware-docs-assistant/brand-guidelines.html)
 - [Design system](https://srikishore5727.github.io/version-aware-docs-assistant/design-system.html)
 

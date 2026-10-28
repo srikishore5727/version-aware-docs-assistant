@@ -26,12 +26,9 @@ def index_db(tmp_path_factory: pytest.TempPathFactory) -> Path:
 
 
 @pytest.fixture()
-def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
-    import app.main as main
-
-    monkeypatch.setattr(main, "INDEX_PATH", tmp_path / "endpoint.db")
-    monkeypatch.setattr(main, "CORPUS_DIR", CORPUS)
-    return TestClient(main.app)
+def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
+    monkeypatch.setenv("VADA_CORPUS_DIR", str(CORPUS))
+    return TestClient(app)
 
 
 # --- query building -------------------------------------------------------
@@ -131,6 +128,7 @@ def test_endpoint_returns_results(client: TestClient) -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["query"] == "cursor pagination"
+    assert body["mode"] in {"hybrid", "keyword"}
     assert body["count"] == len(body["results"]) > 0
     assert body["results"][0]["source_url"].startswith("https://")
 

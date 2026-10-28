@@ -94,6 +94,7 @@ class SearchResult:
     section: str
     text: str
     score: float
+    matched_by: str = "keyword"
 
     def to_dict(self) -> dict:
         return asdict(self)

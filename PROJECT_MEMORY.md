@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 28 October 2026 - Day 3 complete
+**Last updated:** 28 October 2026 - Day 4 complete
 
 ---
 
@@ -62,45 +62,63 @@ No database server, no vector store, no build step. Keep it that simple.
 
 ```
 version-aware-docs-assistant/
-├── .github/workflows/ci.yml   CI: install deps and run pytest
-├── app/
-│   ├── __init__.py            Version constant
-│   ├── main.py                FastAPI app: /health, /, /api/search
-│   ├── ingest.py              Front-matter parser, corpus loader, chunker
-│   └── search.py              FTS5 index build, query building, BM25 search
-├── corpus/                    12 sample Markdown docs (api-reference, migration-guide, changelog)
-├── data/index/vada.db         Generated search index (gitignored)
-├── tests/
-│   ├── test_health.py         Tests for the scaffold
-│   ├── test_ingest.py         Tests for parsing, loading, and chunking
-│   └── test_search.py         Tests for query building, ranking, and the endpoint
-├── docs/
-│   └── PRD.md                 Product requirements (v1.0)
-├── mockups/                   UX mockup, brand guidelines, design system (static, deployed)
-├── requirements.txt
-├── pytest.ini
-├── README.md
-└── PROJECT_MEMORY.md          This file
+|-- .github/workflows/ci.yml   CI: install deps and run pytest
+|-- app/
+|   |-- __init__.py            Version constant
+|   |-- main.py                FastAPI app: /health, /, /api/search
+|   |-- config.py              Settings from env + .env
+|   |-- ingest.py              Front-matter parser, corpus loader, chunker
+|   |-- search.py              FTS5 index, BM25 keyword search
+|   |-- embeddings.py          Gemini embeddings + offline hashing fallback
+|   |-- vector_store.py        Chroma collection wrapper
+|   `-- retriever.py           Hybrid retrieval (RRF fusion) + index build
+|-- corpus/                    12 sample Markdown docs (api-reference, migration-guide, changelog)
+|-- data/index/                Generated indexes: vada.db + chroma/ (gitignored)
+|-- tests/
+|   |-- conftest.py            Forces offline embeddings and temp indexes
+|   |-- test_health.py
+|   |-- test_ingest.py
+|   |-- test_search.py
+|   `-- test_hybrid.py
+|-- docs/
+|   |-- PRD.md                 Product requirements (v1.0)
+|   `-- RAG_ARCHITECTURE.md    Pipeline, prompt contract, failure behaviour
+|-- mockups/                   UX mockup, brand guidelines, design system (static, deployed)
+|-- .env.example               Template for local secrets (real .env is gitignored)
+|-- requirements.txt
+|-- pytest.ini
+|-- README.md
+`-- PROJECT_MEMORY.md          This file
 ```
 
 Planned additions: `app/answer.py`, `app/static/` (UI), `tests/golden_set.json`.
 
 ---
 
-## 5. Ten-day plan
+## 5. 20-day plan
 
 | Day | Feature | Status |
 |---|---|---|
 | 1 | App scaffold, `/health`, CI | **Done** |
 | 2 | Document ingestion and chunking | **Done** |
 | 3 | SQLite FTS5 index, `/api/search` | **Done** |
-| 4 | Search UI with source cards | Next |
-| 5 | Grounded answer generation with citations | Planned |
-| 6 | Version and document-type filters | Planned |
-| 7 | Superseded-document handling | Planned |
-| 8 | Not-found and low-confidence path | Planned |
-| 9 | Golden-set evaluation in CI | Planned |
-| 10 | Polish, docs, v1.0.0 release | Planned |
+| 4 | Embeddings, Chroma, hybrid retrieval | **Done** |
+| 5 | Grounded answer generation, `/api/ask` | Next |
+| 6 | Search UI with source cards | Planned |
+| 7 | Answer panel and source cards | Planned |
+| 8 | Version filter | Planned |
+| 9 | Document-type filter | Planned |
+| 10 | Superseded-document handling | Planned |
+| 11 | Not-found and low-confidence path | Planned |
+| 12 | Golden-set evaluation harness | Planned |
+| 13 | Evaluation in CI | Planned |
+| 14 | Confidence and explanation panel | Planned |
+| 15 | Logging and metrics | Planned |
+| 16 | Answer feedback capture | Planned |
+| 17 | Index refresh job | Planned |
+| 18 | Accessibility and dark mode | Planned |
+| 19 | Performance tuning | Planned |
+| 20 | v1.0.0 release | Planned |
 
 ---
 
@@ -148,64 +166,67 @@ pytest                          # run tests
 
 ---
 
-## 8. Current state (end of Day 3)
+## 8. Current state (end of Day 4)
 
-- `corpus/` has 12 sample Markdown docs: 4 api-reference, 4 migration-guide,
-  4 changelog, across v1/v2/v3. v3 docs are `current`; v1 and v2 are `superseded`.
-- `app/ingest.py` parses YAML front-matter and splits docs into heading-aware
-  overlapping chunks. 12 docs produce 60 chunks.
-- `app/search.py` builds a SQLite FTS5 index (porter stemming, BM25 with title
-  and section boosted) and returns ranked chunks with full citation metadata.
-- `POST /api/search` is live: `{"query": str, "limit": 5}` ->
-  `{"query", "count", "results": [...]}`. Empty/wordless query -> `400`,
-  no matches -> `count: 0` with an empty list.
-- The index builds itself on first search, or via `python -m app.search`.
-  Generated file: `data/index/vada.db` (gitignored).
-- 30 tests pass locally (3 scaffold + 10 ingestion + 17 search) and in CI.
+- `corpus/` has 12 sample Markdown docs across v1/v2/v3 (v3 `current`, v1/v2
+  `superseded`). Ingestion produces 60 chunks with full citation metadata.
+- **Two indexes** exist for every chunk:
+  - `data/index/vada.db` - SQLite FTS5, BM25 with title/section boosts
+  - `data/index/chroma/` - Chroma collection, cosine, Gemini embeddings (768d)
+- **Hybrid retrieval** (`app/retriever.py`) queries both and fuses with
+  Reciprocal Rank Fusion (K=60). A vector failure silently falls back to BM25.
+- `POST /api/search` returns `{"query", "mode", "count", "results"}` where
+  `mode` is `hybrid` or `keyword`, and each result has `matched_by`
+  (`keyword` / `vector` / `both`).
+- Config comes from env + `.env`: `GEMINI_API_KEY`, `VADA_EMBEDDING_MODEL`,
+  `VADA_LLM_MODEL`, `VADA_EMBEDDINGS` (`gemini` / `hash` / `off`).
+- 42 tests pass locally (3 scaffold + 10 ingestion + 17 search + 12 hybrid).
+  Tests force `VADA_EMBEDDINGS=hash`, so CI never calls the network.
 - No UI, no filters, no answer generation yet.
 
-**Search API (stable - build on this next):**
+**Retrieval API (stable - build on this next):**
 
 ```python
-from app.search import search, reindex, ensure_index
+from app.retriever import build_index, hybrid_search
 
-reindex("corpus", "data/index/vada.db")          # force rebuild, returns chunk count
-results = search("data/index/vada.db", "how do I paginate users", limit=5)
+build_index()                                   # rebuild both indexes
+results = hybrid_search("how do I paginate users", limit=5)
 ```
 
 - `SearchResult` fields: `chunk_id, doc_id, title, doc_type, version, status,
-  source_url, last_updated, section, text, score` (`score` = `-bm25`, higher is better)
-- `build_match_query()` lowercases, strips stopwords, quotes every token, and ORs
-  them, so user punctuation cannot produce an FTS5 syntax error.
-- Raises `QueryError` when a query has no searchable words.
-- Every chunk row is stored with its version/type, so Day 6 filters are a
-  `WHERE version = ?` addition rather than a re-index.
+  source_url, last_updated, section, text, score, matched_by`
+- `build_index()` prints/logs `{"chunks", "keyword", "vectors"}` counts.
+- Filters are not implemented yet; they arrive on Day 8 by passing `where` to
+  Chroma and a `WHERE` clause to FTS5.
 
 ---
 
-## 9. Next task - Day 4: search UI with source cards
+## 9. Next task - Day 5: grounded answer generation with citations
 
-**Goal:** a usable single page that searches the corpus and shows the citation
-behind every result.
+**Goal:** `POST /api/ask` returns a short answer that cites retrieved chunks, or
+`not_found`. This is the RAG generation half.
 
 **Build**
 
-1. `app/static/index.html` (+ `app.css`, `app.js`) served by FastAPI at `/`.
-   Reuse the design-system tokens from `mockups/design-system.html`
-   (ink `#111318`, indigo `#4F46E5`, neutral greys, 8px spacing scale).
-2. Layout: logo mark (`mockups/brand/logo-mark.svg`), one search input with a
-   submit button, example-question chips, and a results area.
-3. Results: one card per chunk showing title, section, a version badge
-   (`v3` current / `v2` superseded), document type, `last_updated`, a short text
-   excerpt, and a link to `source_url` opening in a new tab.
-4. States: idle (examples), loading (skeleton or spinner), results, no results
-   ("No matches in the indexed docs" - refined on Day 8).
-5. Wire it to `POST /api/search` with `fetch`, `limit: 5`. Debounce not needed;
-   submit on Enter or button click. Do not store the previous query in history.
-6. Keep the JSON endpoints intact and add a test that `/` serves HTML containing
-   the search form.
+1. `app/answer.py`
+   - `build_prompt(question, chunks)` implementing the contract in
+     `docs/RAG_ARCHITECTURE.md` §6 (answer only from context, cite `[n]`,
+     reply `NOT_FOUND`, state the version, under 80 words).
+   - `answer_question(question, ...) -> Answer` with
+     `status` (`answered` / `not_found`), `answer`, `sources`, `model`.
+   - Gemini through the **OpenAI-compatible** endpoint
+     `https://generativelanguage.googleapis.com/v1beta/openai/` using the
+     `openai` SDK, model from `VADA_LLM_MODEL`, temperature 0.2, timeout 20 s.
+   - Validate citations in code: every `[n]` must map to a retrieved chunk.
+     Retry once, then return `not_found`. Never return an uncited answer.
+   - No key -> deterministic extractive fallback (top chunk's first sentences
+     plus `[1]`), so the demo and tests work offline.
+2. `POST /api/ask` in `app/main.py`: `{"question", "version"?, "doc_type"?}`.
+   `400` for empty question, `503` if retrieval is unavailable.
+3. Tests: prompt contains the rules, citation validation rejects bad markers,
+   `NOT_FOUND` maps to the not-found status, endpoint returns sources.
 
-**Do not** add LLM answers or filters on Day 4. The answer panel is Day 5.
+**Do not** build the UI on Day 5. That is Day 6.
 
 ---
 
@@ -241,3 +262,4 @@ behind every result.
 | 1 | 27 Oct 2026 | FastAPI scaffold, `/health`, tests, CI |
 | 2 | 28 Oct 2026 | Sample corpus (12 docs) + ingestion and heading-aware chunking (`app/ingest.py`), 13 tests |
 | 3 | 28 Oct 2026 | SQLite FTS5 index + BM25 `POST /api/search` (`app/search.py`), 30 tests |
+| 4 | 28 Oct 2026 | Gemini embeddings + Chroma + hybrid RRF retrieval (`app/embeddings.py`, `vector_store.py`, `retriever.py`), 42 tests |
