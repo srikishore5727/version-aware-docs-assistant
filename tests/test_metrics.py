@@ -41,6 +41,8 @@ def test_metrics_snapshot_shape() -> None:
         "answered",
         "not_found",
         "errors",
+        "cache_hits",
+        "cache_misses",
         "avg_ms",
         "max_ms",
         "slowest_endpoint",
@@ -96,8 +98,11 @@ def test_client_errors_are_not_server_errors(client: TestClient) -> None:
 def test_reset_clears_every_counter() -> None:
     metrics.record_request("/api/search", 200, 5.0)
     metrics.record_outcome("answered")
+    metrics.record_cache(hit=True)
     metrics.reset()
 
     assert metrics.snapshot()["requests"] == 0
     assert metrics.snapshot()["answered"] == 0
+    assert metrics.snapshot()["cache_hits"] == 0
+    assert metrics.snapshot()["cache_misses"] == 0
     assert metrics.snapshot()["slowest_endpoint"] == ""
