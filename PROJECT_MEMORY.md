@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 29 October 2026 - Day 13 complete
+**Last updated:** 29 October 2026 - Day 14 complete
 
 ---
 
@@ -116,8 +116,8 @@ Planned additions: `tests/golden_set.json`, `app/metrics.py`.
 | 11 | Not-found and low-confidence path | **Done** |
 | 12 | Golden-set evaluation harness | **Done** |
 | 13 | Evaluation in CI | **Done** |
-| 14 | Confidence and explanation panel | Next |
-| 15 | Logging and metrics | Planned |
+| 14 | Confidence and explanation panel | **Done** |
+| 15 | Logging and metrics | Next |
 | 16 | Answer feedback capture | Planned |
 | 17 | Index refresh job | Planned |
 | 18 | Accessibility and dark mode | Planned |
@@ -221,6 +221,13 @@ pytest                          # run tests
 - **CI gate**: `python -m app.evaluate --min-recall 0.85` runs after pytest,
   exits `1` below target, and uploads `data/eval/report.json` as an artefact.
 - 110 tests pass locally. CI forces `VADA_EMBEDDINGS=hash` and a blank key.
+- **Confidence** is computed, never generated: `Answer.__post_init__` fills
+  `confidence` (`high` / `medium` / `low`) and `reasons` from the validated
+  sources and the model name. Rules: high = 2+ sources, one version, all
+  current; medium = single source, mixed versions, or superseded; low =
+  not-found or extractive. Exposed in `to_dict()` and rendered as a quiet row
+  under the answer head.
+- 117 tests pass locally. CI forces `VADA_EMBEDDINGS=hash` and a blank key.
 
 **APIs (stable - build on these next):**
 
@@ -241,25 +248,25 @@ answer.notice  # "" for current-only citations
 
 ---
 
-## 9. Next task - Day 14: confidence and explanation panel
+## 9. Next task - Day 15: logging and metrics
 
-**Goal:** show *why* an answer is trustworthy, not just that it exists.
+**Goal:** know what the service is doing in production without reading tracebacks.
 
 **Build**
 
-1. `app/answer.py`: add `confidence: str` (`high` / `medium` / `low`) and
-   `reasons: list[str]` to `Answer` and `to_dict()`. Derive them in code:
-   - high: 2+ cited sources, all `current`, all within one version
-   - medium: one cited source, or mixed versions, or a superseded source
-   - low: extractive fallback, or a single weak match
-   Reasons are short human sentences, e.g. "2 sources agree", "cites superseded v2".
-2. `app/main.py`: nothing extra - it already spreads `answer.to_dict()`.
-3. UI: a compact confidence row under the answer head (dot + label + reasons,
-   `aria-live` friendly). Keep it quiet: no red alarm for `medium`.
-4. Tests: high/medium/low cases, payload fields, UI contains the container.
-5. Document the rules in `docs/RAG_ARCHITECTURE.md` §7.
+1. `app/observability.py`: configure one JSON logger (`vada`) writing to stderr;
+   `log_request(endpoint, status, ms, extra)` emits one line per API call.
+   In-process `Metrics` counter: `requests`, `answered`, `not_found`, `errors`,
+   `total_ms`, `max_ms`, `slowest_endpoint`.
+2. `app/main.py`: HTTP middleware timing `/api/*` requests (skip static), call
+   `log_request`, record metrics. Add `GET /api/metrics` returning a snapshot.
+3. Count answer outcomes in `/api/ask` (`answered` vs `not_found`) and
+   retrieval counts in `/api/search`.
+4. `tests/test_metrics.py`: counters increment, snapshot shape, slowest
+   endpoint, middleware skips `/health` or not (decide and test).
+5. `README.md`, `docs/RAG_ARCHITECTURE.md` - the endpoint and log format.
 
-**Do not** add logging or metrics - that is Day 15.
+**Do not** add feedback capture - that is Day 16.
 
 ---
 
@@ -305,3 +312,4 @@ answer.notice  # "" for current-only citations
 | 11 | 29 Oct 2026 | Relevance floor (`MIN_SIMILARITY`, calibrated embeddings only), out-of-scope `not_found`, 6 threshold tests, 103 tests |
 | 12 | 29 Oct 2026 | Golden-set harness (`eval/golden_set.json`, `app/evaluate.py`), recall@5 1.00 / MRR 0.91 with Gemini, 6 eval tests, 109 tests |
 | 13 | 29 Oct 2026 | Evaluation gates CI (`--min-recall 0.85`, report artefact), threshold test, 110 tests |
+| 14 | 29 Oct 2026 | Computed confidence + reasons on `Answer`, quiet UI row, 7 confidence tests, 117 tests |

@@ -232,6 +232,74 @@ def test_missing_key_uses_the_extractive_path() -> None:
     assert answer.reason == "no_api_key"
 
 
+# --- confidence -----------------------------------------------------------
+
+
+def test_two_current_sources_in_one_version_are_high_confidence() -> None:
+    answer = generate_answer(
+        "Which field?",
+        CHUNKS,
+        completer=lambda messages: "Use display_name [1] and keep email unique [2].",
+    )
+
+    assert answer.confidence == "high"
+    assert "2 sources agree" in answer.reasons
+    assert "all from v3" in answer.reasons
+
+
+def test_a_single_source_is_medium_confidence() -> None:
+    answer = generate_answer(
+        "Which field?", CHUNKS, completer=lambda messages: "Use display_name [1]."
+    )
+
+    assert answer.confidence == "medium"
+    assert "a single source" in answer.reasons
+
+
+def test_a_superseded_source_lowers_confidence() -> None:
+    chunks = [_chunk(1, version="v2", status="superseded"), _chunk(2, version="v2", status="superseded")]
+    answer = generate_answer(
+        "Which field?", chunks, completer=lambda messages: "Use user_name [1] and email [2]."
+    )
+
+    assert answer.confidence == "medium"
+    assert any("superseded v2" in reason for reason in answer.reasons)
+
+
+def test_mixed_versions_lower_confidence() -> None:
+    chunks = [_chunk(1, version="v2", status="superseded"), _chunk(2, version="v3")]
+    answer = generate_answer(
+        "Which field?", chunks, completer=lambda messages: "Old [1], new [2]."
+    )
+
+    assert answer.confidence == "medium"
+    assert any("mixed versions" in reason for reason in answer.reasons)
+
+
+def test_extractive_answers_are_low_confidence() -> None:
+    answer = extractive_answer(CHUNKS)
+
+    assert answer.confidence == "low"
+    assert "offline fallback" in answer.reasons[0]
+
+
+def test_not_found_is_low_confidence() -> None:
+    answer = generate_answer("Which field?", [], completer=lambda messages: "unused")
+
+    assert answer.confidence == "low"
+    assert answer.reasons == ["no verified source"]
+
+
+def test_confidence_is_in_the_payload() -> None:
+    answer = generate_answer(
+        "Which field?", CHUNKS, completer=lambda messages: "Use display_name [1]."
+    )
+    payload = answer.to_dict()
+
+    assert payload["confidence"] == answer.confidence
+    assert payload["reasons"] == answer.reasons
+
+
 # --- endpoint -------------------------------------------------------------
 
 

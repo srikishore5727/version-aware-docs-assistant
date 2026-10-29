@@ -201,7 +201,7 @@
     cardBox.appendChild(list);
   }
 
-  function answerPanel(kind, body, meta, footText, notice) {
+  function answerPanel(kind, body, meta, footText, notice, confidence, reasons) {
     answerBox.className = "answer answer--" + (kind === "answered" ? "ok" : "miss");
     answerBox.textContent = "";
 
@@ -215,6 +215,18 @@
     );
     if (meta) head.appendChild(el("span", "answer__meta", meta));
     answerBox.appendChild(head);
+
+    if (confidence) {
+      var row = el("div", "answer__confidence answer__confidence--" + confidence);
+      row.appendChild(el("span", "confidence__dot"));
+      row.appendChild(
+        el("span", "confidence__label", confidence.charAt(0).toUpperCase() + confidence.slice(1) + " confidence"),
+      );
+      if (reasons && reasons.length) {
+        row.appendChild(el("span", "confidence__why", reasons.join(" \u00b7 ")));
+      }
+      answerBox.appendChild(row);
+    }
 
     if (notice) answerBox.appendChild(el("p", "answer__notice", notice));
 
@@ -243,6 +255,9 @@
         REASONS[data.reason] || REASONS.model_not_found,
         "",
         "Nothing was guessed. Try a version-specific question or one of the examples above.",
+        "",
+        data.confidence,
+        data.reasons,
       );
       return;
     }
@@ -271,6 +286,8 @@
       [versions, data.mode === "hybrid" ? "hybrid" : "keyword"].filter(Boolean).join(" \u00b7 "),
       (data.model || "extractive") + " \u00b7 every claim is cited",
       data.notice,
+      data.confidence,
+      data.reasons,
     );
     renderSources(sources);
   }

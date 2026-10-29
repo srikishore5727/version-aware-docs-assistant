@@ -356,6 +356,44 @@ h1 em {
   line-height: 1.45;
 }
 
+.answer__confidence {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 12.5px;
+}
+
+.confidence__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex: none;
+}
+
+.answer__confidence--high .confidence__dot {
+  background: #16a34a;
+}
+
+.answer__confidence--medium .confidence__dot {
+  background: #d97706;
+}
+
+.answer__confidence--low .confidence__dot {
+  background: #94a3b8;
+}
+
+.confidence__label {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.confidence__why {
+  color: var(--muted);
+}
+
 .answer__body code {
   font-family: var(--mono);
   font-size: 0.82em;
