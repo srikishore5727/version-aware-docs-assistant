@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 29 October 2026 - Day 15 complete
+**Last updated:** 29 October 2026 - Day 16 complete
 
 ---
 
@@ -118,8 +118,8 @@ Planned additions: `tests/golden_set.json`, `app/metrics.py`.
 | 13 | Evaluation in CI | **Done** |
 | 14 | Confidence and explanation panel | **Done** |
 | 15 | Logging and metrics | **Done** |
-| 16 | Answer feedback capture | Next |
-| 17 | Index refresh job | Planned |
+| 16 | Answer feedback capture | **Done** |
+| 17 | Index refresh job | Next |
 | 18 | Accessibility and dark mode | Planned |
 | 19 | Performance tuning | Planned |
 | 20 | v1.0.0 release | Planned |
@@ -220,19 +220,24 @@ pytest                          # run tests
   **recall@5 1.00, MRR 0.91**; hermetic hashing baseline **0.93**.
 - **CI gate**: `python -m app.evaluate --min-recall 0.85` runs after pytest,
   exits `1` below target, and uploads `data/eval/report.json` as an artefact.
-- 110 tests pass locally. CI forces `VADA_EMBEDDINGS=hash` and a blank key.
 - **Confidence** is computed, never generated: `Answer.__post_init__` fills
   `confidence` (`high` / `medium` / `low`) and `reasons` from the validated
   sources and the model name. Rules: high = 2+ sources, one version, all
   current; medium = single source, mixed versions, or superseded; low =
   not-found or extractive. Exposed in `to_dict()` and rendered as a quiet row
   under the answer head.
-- 117 tests pass locally. CI forces `VADA_EMBEDDINGS=hash` and a blank key.
 - **Observability** (`app/observability.py`): one JSON line per `/api/*` request
   (`format_event()`), plus process-local counters exposed at `GET /api/metrics`
   (`requests`, `answered`, `not_found`, `errors`, `avg_ms`, `max_ms`,
   `slowest_endpoint`). `/health` and static files are not counted. Middleware
   lives in `app/main.py`; counters reset in tests via `metrics.reset()`.
+- **Feedback** (`app/feedback.py`): SQLite `data/feedback.db` (gitignored,
+  `VADA_FEEDBACK_DB`), table `feedback(id, created_at, question, verdict,
+  status, version, doc_type)`. `POST /api/feedback` returns `201` with the id,
+  `422` for an unknown verdict, `400` for an empty question;
+  `GET /api/feedback` returns counts plus the 20 most recent rows. Two quiet
+  buttons appear under an answered response.
+- 133 tests pass locally.
 
 **APIs (stable - build on these next):**
 
@@ -253,24 +258,24 @@ answer.notice  # "" for current-only citations
 
 ---
 
-## 9. Next task - Day 16: answer feedback capture
+## 9. Next task - Day 17: index refresh job
 
-**Goal:** let a reader say "this was wrong" and keep the evidence.
+**Goal:** publishing a doc should not require deleting `data/index` by hand.
 
 **Build**
 
-1. `app/feedback.py` - SQLite table `feedback(id, created_at, question, verdict,
-   status, version, doc_type)`; `record()` and `summary()` (counts by verdict).
-2. `app/config.py` - `VADA_FEEDBACK_DB` (default `data/feedback.db`).
-3. `app/main.py` - `POST /api/feedback` body
-   `{"question", "verdict": "helpful" | "not_helpful", "status"?, "version"?, "doc_type"?}`;
-   `201` with the stored id, `422` for an unknown verdict.
-4. UI: two quiet buttons under the answer ("Helpful" / "Not quite"), one send,
-   then "Thanks - noted." Never block the page on the request.
-5. Tests: store round-trip, summary counts, endpoint validation, UI contains
-   the controls.
+1. `app/refresh.py`:
+   - `index_status(settings)` -> counts, index mtime, corpus mtime, `stale`
+   - `refresh_if_stale(settings)` -> rebuild only when the corpus is newer
+   - `refresh(settings)` -> `build_index()` plus the new mtime
+   - `python -m app.refresh [--force]` CLI
+2. `app/main.py`: `GET /api/index/status` (read-only). Do not expose an
+   unauthenticated rebuild endpoint.
+3. Tests: status shape, stale detection with a touched corpus file, no rebuild
+   when fresh, forced rebuild changes mtime/counts.
+4. Document the workflow (edit docs -> run refresh -> status shows fresh).
 
-**Do not** build a dashboard - that is out of scope for v1.
+**Do not** add a scheduler or background worker - a CLI is enough for v1.
 
 ---
 
@@ -318,3 +323,4 @@ answer.notice  # "" for current-only citations
 | 13 | 29 Oct 2026 | Evaluation gates CI (`--min-recall 0.85`, report artefact), threshold test, 110 tests |
 | 14 | 29 Oct 2026 | Computed confidence + reasons on `Answer`, quiet UI row, 7 confidence tests, 117 tests |
 | 15 | 29 Oct 2026 | JSON request logs, `/api/metrics` counters and latency, 8 metrics tests, 125 tests |
+| 16 | 29 Oct 2026 | Feedback capture (`app/feedback.py`, `POST/GET /api/feedback`), UI buttons, 8 feedback tests, 133 tests |

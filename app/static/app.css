@@ -394,6 +394,42 @@ h1 em {
   color: var(--muted);
 }
 
+.answer__feedback {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.feedback__label {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.feedback__btn {
+  font: inherit;
+  font-size: 12.5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.feedback__btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.feedback__btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 .answer__body code {
   font-family: var(--mono);
   font-size: 0.82em;

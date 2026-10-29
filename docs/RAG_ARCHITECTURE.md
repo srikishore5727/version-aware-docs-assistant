@@ -159,6 +159,8 @@ cannot be hallucinated away.
 |---|---|---|
 | `POST /api/search` | Ranked chunks, no generation | Built |
 | `POST /api/ask` | Answer + citations + sources | Built |
+| `POST /api/feedback` | Store a reader verdict | Built |
+| `GET /api/feedback` | Verdict counts and recent rows | Built |
 | `GET /api/metrics` | Process request counters and latency | Built |
 | `GET /health` | Liveness | Built |
 
