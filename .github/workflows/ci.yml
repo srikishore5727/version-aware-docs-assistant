@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  # Hermetic, offline, deterministic: no key, no network, no model call.
+  VADA_EMBEDDINGS: hash
+  GEMINI_API_KEY: ""
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -25,3 +30,14 @@ jobs:
 
       - name: Run tests
         run: pytest
+
+      - name: Score the golden set
+        run: python -m app.evaluate --min-recall 0.85
+
+      - name: Upload evaluation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-set-report
+          path: data/eval/report.json
+          if-no-files-found: ignore

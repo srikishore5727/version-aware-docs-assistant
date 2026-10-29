@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from app.config import Settings
-from app.evaluate import evaluate, first_hit_rank, load_golden_set
+from app.evaluate import check_threshold, evaluate, first_hit_rank, load_golden_set
 from app.ingest import load_chunks
 from app.search import SearchResult
 
@@ -105,3 +105,10 @@ def test_real_retrieval_clears_the_recall_target(settings: Settings) -> None:
     report = evaluate(settings)
 
     assert report["recall"] >= 0.85, report["misses"]
+
+
+def test_threshold_helper_accepts_a_pass_and_rejects_a_miss() -> None:
+    assert check_threshold({"recall": 0.9}, 0.85) is True
+    assert check_threshold({"recall": 0.85}, 0.85) is True
+    assert check_threshold({"recall": 0.84}, 0.85) is False
+    assert check_threshold({}, 0.85) is False
