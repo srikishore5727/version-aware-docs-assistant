@@ -201,13 +201,17 @@ band.
 
 ## 10. Evaluation
 
-- Golden set: 30 question → expected-document pairs (`tests/golden_set.json`).
+- Golden set: 30 question → expected-document pairs (`eval/golden_set.json`),
+  covering all 12 docs.
 - **Retrieval recall@5 ≥ 0.85** — measured without any model call, so CI is
-  deterministic.
+  deterministic. Baseline with `gemini-embedding-001`: recall@5 1.00, MRR 0.91.
 - **Citation accuracy ≥ 90%** — scored against the golden set when a key is set;
   skipped otherwise.
-- **Not-found correctness** — the 5 unanswerable questions must return `not_found`.
-- Runs in CI on every pull request (Day 9).
+- **Not-found correctness** — unanswerable questions must return `not_found`
+  (the Day 11 floor covers this).
+- The harness is `app/evaluate.py`; `python -m app.evaluate` prints a summary and
+  writes `data/eval/report.json`.
+- A CI gate that fails the build below target lands on Day 13.
 
 ---
 

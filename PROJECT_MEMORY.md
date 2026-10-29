@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 29 October 2026 - Day 11 complete
+**Last updated:** 29 October 2026 - Day 12 complete
 
 ---
 
@@ -114,8 +114,8 @@ Planned additions: `tests/golden_set.json`, `app/metrics.py`.
 | 9 | Document-type filter | **Done** |
 | 10 | Superseded-document handling | **Done** |
 | 11 | Not-found and low-confidence path | **Done** |
-| 12 | Golden-set evaluation harness | Next |
-| 13 | Evaluation in CI | Planned |
+| 12 | Golden-set evaluation harness | **Done** |
+| 13 | Evaluation in CI | Next |
 | 14 | Confidence and explanation panel | Planned |
 | 15 | Logging and metrics | Planned |
 | 16 | Answer feedback capture | Planned |
@@ -215,8 +215,11 @@ pytest                          # run tests
 - 103 tests pass locally (6 more threshold tests). CI forces
   `VADA_EMBEDDINGS=hash` and a blank key, so the floor is exercised through
   injected fakes, never the hashing numbers.
-- **Known gap:** none blocking. The golden set (Day 12) is the next thing that
-  will tell us whether the floors are right in aggregate.
+- **Golden set** (`eval/golden_set.json`, `app/evaluate.py`): 30 questions over
+  all 12 docs, scored retrieval-only. Baseline with real Gemini embeddings:
+  **recall@5 1.00, MRR 0.91**. CI-safe baseline with hashing embeddings is
+  asserted at recall@5 >= 0.85 by `tests/test_eval.py`.
+- **Known gap:** the eval harness is not yet a CI gate of its own (Day 13).
 
 **APIs (stable - build on these next):**
 
@@ -237,30 +240,22 @@ answer.notice  # "" for current-only citations
 
 ---
 
-## 9. Next task - Day 12: golden-set evaluation harness
+## 9. Next task - Day 13: evaluation in CI
 
-**Goal:** measure retrieval quality instead of trusting vibes, and keep the
-number reproducible offline.
+**Goal:** make recall a build failure, not a nice-to-have.
 
 **Build**
 
-1. `eval/golden_set.json` - 30 entries of
-   `{"id", "question", "expected_doc_ids": [...], "version"?, "doc_type"?}`.
-   Cover every doc in `corpus/`: pagination, auth, rate limits, webhooks,
-   errors, versioning, migrations, changelogs, field renames.
-2. `app/evaluate.py`:
-   - `load_golden_set(path)`
-   - `evaluate(settings, limit=5)` -> `{"recall@5", "mrr", "cases": [...]}`
-   - a hit is a retrieved chunk whose `doc_id` is in `expected_doc_ids`
-   - retrieval only, no model call, so it runs offline
-   - `python -m app.evaluate` prints a table and writes
-     `data/eval/report.json`
-3. `tests/test_eval.py`: the set loads, every expected doc id exists in the
-   corpus, a perfect retriever scores 1.0, `recall@5 >= 0.85` on the real
-   corpus with hashing embeddings (CI-safe).
-4. `README.md`: how to run it.
+1. `app/evaluate.py`: `check_threshold(report, minimum)` raising `SystemExit`
+   or returning a bool; `python -m app.evaluate --min-recall 0.85` exits `1`
+   when the target is missed.
+2. `.github/workflows/ci.yml`: after pytest, run the harness with
+   `VADA_EMBEDDINGS=hash` and `GEMINI_API_KEY=""`, then upload
+   `data/eval/report.json` as an artefact.
+3. `tests/test_eval.py`: threshold helper passes at 0.85, fails below.
+4. README: badge/step note.
 
-**Do not** wire thresholds into CI yet - that is Day 13.
+**Do not** add confidence scoring - that is Day 14.
 
 ---
 
@@ -304,3 +299,4 @@ number reproducible offline.
 | 9 | 28 Oct 2026 | Document-type filter plus combined scopes (`normalize_doc_type`, parameterised FTS filters, second UI selector), 90 tests |
 | 10 | 28 Oct 2026 | Superseded handling: RRF demotion penalty, `Answer.notice`, UI amber banner, superseded tests, 97 tests |
 | 11 | 29 Oct 2026 | Relevance floor (`MIN_SIMILARITY`, calibrated embeddings only), out-of-scope `not_found`, 6 threshold tests, 103 tests |
+| 12 | 29 Oct 2026 | Golden-set harness (`eval/golden_set.json`, `app/evaluate.py`), recall@5 1.00 / MRR 0.91 with Gemini, 6 eval tests, 109 tests |
