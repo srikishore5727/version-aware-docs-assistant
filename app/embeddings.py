@@ -25,10 +25,16 @@ TOKEN_RE = re.compile(r"[a-z0-9_]+")
 
 
 class EmbeddingProvider(Protocol):
-    """Minimal interface the retriever depends on."""
+    """Minimal interface the retriever depends on.
+
+    ``calibrated`` means cosine similarities sit on the scale the relevance
+    floor was measured against. Only real semantic models set it; the hashing
+    fallback returns arbitrary values and must not be thresholded.
+    """
 
     name: str
     dimensions: int
+    calibrated: bool
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]: ...
 
@@ -47,6 +53,7 @@ class GeminiEmbeddings:
 
     name = "gemini"
     dimensions = EMBEDDING_DIM
+    calibrated = True
 
     def __init__(
         self,
@@ -107,6 +114,7 @@ class HashingEmbeddings:
 
     name = "hash"
     dimensions = 256
+    calibrated = False
 
     def _vector(self, text: str) -> list[float]:
         vector = [0.0] * self.dimensions

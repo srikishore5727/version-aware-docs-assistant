@@ -157,7 +157,7 @@ cannot be hallucinated away.
 | Endpoint | Purpose | Status |
 |---|---|---|
 | `POST /api/search` | Ranked chunks, no generation | Built |
-| `POST /api/ask` | Answer + citations + sources | Day 5 |
+| `POST /api/ask` | Answer + citations + sources | Built |
 | `GET /health` | Liveness | Built |
 
 `POST /api/ask` request: `{"question": str, "version": str?, "doc_type": str?}`
@@ -174,11 +174,28 @@ Errors: `400` empty question, `503` retrieval unavailable.
 | Embedding call fails | Fall back to BM25, log a warning |
 | Vector store missing | Rebuild from corpus; if that fails, BM25 only |
 | No chunks retrieved | `not_found`, no model call |
+| Query is out of scope | Best similarity below `MIN_SIMILARITY` -> no results, `not_found` |
 | Model returns `NOT_FOUND` | `not_found` state with the closest sources shown read-only |
 | Model times out twice | `not_found` with a retry hint, never a partial answer |
 | Citation fails validation | Retry once, then `not_found` |
 
 The system degrades; it never invents an answer.
+
+### 9.1 Relevance floor
+
+Chroma always returns its *nearest* neighbours, however far away they are, so
+without a cut-off a question about pizza still produced five confident-looking
+cards. The floor is measured, not guessed: on `gemini-embedding-001` (768d,
+cosine), 14 in-scope questions scored a best similarity of 0.63-0.86 and 10
+out-of-scope asks scored 0.52-0.59. `MIN_SIMILARITY = 0.60` sits in that empty
+band.
+
+- Vector hits below the floor are dropped before fusion.
+- If the *best* hit is below the floor, retrieval returns nothing, even when
+  BM25 found an incidental word match ("write me a poem" matches "write").
+- The floor only applies to calibrated embeddings. `HashingEmbeddings` is a
+  test/offline fallback whose values mean nothing, so thresholding it would
+  break keyword mode. A vector failure also skips the gate and BM25 answers.
 
 ---
 

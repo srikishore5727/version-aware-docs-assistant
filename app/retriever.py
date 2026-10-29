@@ -28,6 +28,16 @@ TOP_K_PER_RETRIEVER = 10
 # ties in favour of the version we still support.
 SUPERSEDED_PENALTY = 0.0015
 
+# Relevance floor, measured on gemini-embedding-001 (768d, cosine):
+#
+#   14 in-scope questions   best similarity 0.63 - 0.86
+#   10 out-of-scope asks    best similarity 0.52 - 0.59
+#
+# Cosine similarity from this model is compressed, so a textbook 0.75 would
+# reject good questions. 0.60 sits in the empty band between the two groups.
+# Only applied when the embedder is calibrated; hashing vectors are arbitrary.
+MIN_SIMILARITY = 0.60
+
 # Versions present in ``corpus/``. Explicit so an unknown filter is a 400 rather
 # than a silent empty result. The index refresh (Day 17) revisits this.
 SUPPORTED_VERSIONS = ("v1", "v2", "v3")
@@ -155,6 +165,8 @@ def hybrid_search(
         doc_type=kind,
     )
     vector_hits: list[dict] = []
+    checked_semantics = False
+    calibrated = False
 
     if config.vectors_enabled:
         try:
@@ -179,9 +191,19 @@ def hybrid_search(
                 n_results=TOP_K_PER_RETRIEVER,
                 where=where,
             )
+            checked_semantics = True
+            calibrated = getattr(embedder, "calibrated", False)
         except Exception:
             # A vector failure must never break search; BM25 still answers.
             vector_hits = []
+
+    if checked_semantics and calibrated:
+        best = max((hit["similarity"] for hit in vector_hits), default=0.0)
+        if best < MIN_SIMILARITY:
+            # The whole query is out of scope: no chunk is close enough to be
+            # evidence, and a stray keyword hit is not a licence to answer.
+            return []
+        vector_hits = [hit for hit in vector_hits if hit["similarity"] >= MIN_SIMILARITY]
 
     return _fuse(keyword_hits, vector_hits, limit=limit)
 

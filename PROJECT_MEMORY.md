@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 28 October 2026 - Day 10 complete
+**Last updated:** 29 October 2026 - Day 11 complete
 
 ---
 
@@ -113,8 +113,8 @@ Planned additions: `tests/golden_set.json`, `app/metrics.py`.
 | 8 | Version filter | **Done** |
 | 9 | Document-type filter | **Done** |
 | 10 | Superseded-document handling | **Done** |
-| 11 | Not-found and low-confidence path | Next |
-| 12 | Golden-set evaluation harness | Planned |
+| 11 | Not-found and low-confidence path | **Done** |
+| 12 | Golden-set evaluation harness | Next |
 | 13 | Evaluation in CI | Planned |
 | 14 | Confidence and explanation panel | Planned |
 | 15 | Logging and metrics | Planned |
@@ -170,7 +170,7 @@ pytest                          # run tests
 
 ---
 
-## 8. Current state (end of Day 10)
+## 8. Current state (end of Day 11)
 
 - `corpus/` has 12 sample Markdown docs across v1/v2/v3 (v3 `current`, v1/v2
   `superseded`). Ingestion produces 60 chunks with full citation metadata.
@@ -202,13 +202,21 @@ pytest                          # run tests
     every retired version among the *validated* citations, or `""`.
   - `Answer.notice` is exposed in `to_dict()` and rendered as an amber banner
     above the answer body. The model cannot suppress it.
+- **Relevance floor** (`MIN_SIMILARITY = 0.60`, `app/retriever.py`):
+  - calibrated on 14 in-scope questions (best 0.63-0.86) and 10 out-of-scope
+    asks (best 0.52-0.59) with `gemini-embedding-001`
+  - vector hits below the floor are dropped before fusion; if the best hit is
+    below it, retrieval returns `[]` even when BM25 found an incidental word
+  - only applied when `embedder.calibrated` is true (`GeminiEmbeddings` yes,
+    `HashingEmbeddings` no); a vector failure skips the gate
 - Config from env + `.env`: `GEMINI_API_KEY`, `VADA_EMBEDDING_MODEL`
   (`gemini-embedding-001`), `VADA_LLM_MODEL` (`gemini-3.1-flash-lite-preview`),
   `VADA_EMBEDDINGS` (`gemini` / `hash` / `off`).
-- 97 tests pass locally (7 more superseded tests). CI forces
-  `VADA_EMBEDDINGS=hash` and a blank key.
-- **Known gap:** vector search always returns `limit` neighbours, so a nonsense
-  query still retrieves cards. Day 11 adds the similarity floor.
+- 103 tests pass locally (6 more threshold tests). CI forces
+  `VADA_EMBEDDINGS=hash` and a blank key, so the floor is exercised through
+  injected fakes, never the hashing numbers.
+- **Known gap:** none blocking. The golden set (Day 12) is the next thing that
+  will tell us whether the floors are right in aggregate.
 
 **APIs (stable - build on these next):**
 
@@ -229,34 +237,30 @@ answer.notice  # "" for current-only citations
 
 ---
 
-## 9. Next task - Day 11: not-found and low-confidence path
+## 9. Next task - Day 12: golden-set evaluation harness
 
-**Goal:** when the corpus cannot answer, say so instead of returning four
-vaguely related cards.
+**Goal:** measure retrieval quality instead of trusting vibes, and keep the
+number reproducible offline.
 
 **Build**
 
-1. `app/search.py`: `search()` returns raw BM25 scores, which are unbounded and
-   negative-ish. Expose `bm25` on each `SearchResult` so a threshold can be
-   calibrated (keep `score` as the fused number the UI shows).
-2. `app/retriever.py`: add a floor. Vector hits below a cosine similarity
-   (e.g. `MIN_SIMILARITY = 0.35`) are dropped before fusion; a query that
-   produces no keyword hits *and* no accepted vector hits returns `[]`.
-   Make both thresholds module constants with a comment on how they were
-   chosen.
-3. `app/answer.py`: `generate_answer()` already returns `not_found` for empty
-   chunks - keep that path, and add `reason="below_threshold"` distinct from
-   `no_matches`.
-4. `app/main.py`: `/api/search` with zero results should still be `200` with
-   `count: 0` (no change), but the ask response should carry the reason.
-5. UI: a genuine not-found panel that hides the card list entirely and offers
-   two example chips that *do* work.
-6. Tests: nonsense query returns `[]` from both retrievers, a weak vector match
-   is dropped, a real query still passes, `not_found` carries
-   `below_threshold`, UI hides cards.
-7. Document the floors in `docs/RAG_ARCHITECTURE.md` §9.
+1. `eval/golden_set.json` - 30 entries of
+   `{"id", "question", "expected_doc_ids": [...], "version"?, "doc_type"?}`.
+   Cover every doc in `corpus/`: pagination, auth, rate limits, webhooks,
+   errors, versioning, migrations, changelogs, field renames.
+2. `app/evaluate.py`:
+   - `load_golden_set(path)`
+   - `evaluate(settings, limit=5)` -> `{"recall@5", "mrr", "cases": [...]}`
+   - a hit is a retrieved chunk whose `doc_id` is in `expected_doc_ids`
+   - retrieval only, no model call, so it runs offline
+   - `python -m app.evaluate` prints a table and writes
+     `data/eval/report.json`
+3. `tests/test_eval.py`: the set loads, every expected doc id exists in the
+   corpus, a perfect retriever scores 1.0, `recall@5 >= 0.85` on the real
+   corpus with hashing embeddings (CI-safe).
+4. `README.md`: how to run it.
 
-**Do not** add confidence scoring or the explanation panel - that is Day 14.
+**Do not** wire thresholds into CI yet - that is Day 13.
 
 ---
 
@@ -299,3 +303,4 @@ vaguely related cards.
 | 8 | 28 Oct 2026 | Version filter across FTS5, Chroma and the UI (`normalize_version`, scoped `/api/search` + `/api/ask`), 78 tests |
 | 9 | 28 Oct 2026 | Document-type filter plus combined scopes (`normalize_doc_type`, parameterised FTS filters, second UI selector), 90 tests |
 | 10 | 28 Oct 2026 | Superseded handling: RRF demotion penalty, `Answer.notice`, UI amber banner, superseded tests, 97 tests |
+| 11 | 29 Oct 2026 | Relevance floor (`MIN_SIMILARITY`, calibrated embeddings only), out-of-scope `not_found`, 6 threshold tests, 103 tests |
