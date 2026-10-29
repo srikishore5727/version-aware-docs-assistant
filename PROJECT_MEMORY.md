@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 29 October 2026 - Day 16 complete
+**Last updated:** 29 October 2026 - Day 17 complete
 
 ---
 
@@ -119,8 +119,8 @@ Planned additions: `tests/golden_set.json`, `app/metrics.py`.
 | 14 | Confidence and explanation panel | **Done** |
 | 15 | Logging and metrics | **Done** |
 | 16 | Answer feedback capture | **Done** |
-| 17 | Index refresh job | Next |
-| 18 | Accessibility and dark mode | Planned |
+| 17 | Index refresh job | **Done** |
+| 18 | Accessibility and dark mode | Next |
 | 19 | Performance tuning | Planned |
 | 20 | v1.0.0 release | Planned |
 
@@ -237,7 +237,12 @@ pytest                          # run tests
   `422` for an unknown verdict, `400` for an empty question;
   `GET /api/feedback` returns counts plus the 20 most recent rows. Two quiet
   buttons appear under an answered response.
-- 133 tests pass locally.
+- **Index refresh** (`app/refresh.py`): `index_status()` reports doc/chunk/vector
+  counts plus corpus and index timestamps and a `stale` flag; `refresh()` and
+  `refresh_if_stale()` rebuild; `python -m app.refresh [--force]` is the CLI.
+  `GET /api/index/status` is read-only; there is no unauthenticated rebuild
+  endpoint.
+- 139 tests pass locally.
 
 **APIs (stable - build on these next):**
 
@@ -258,24 +263,26 @@ answer.notice  # "" for current-only citations
 
 ---
 
-## 9. Next task - Day 17: index refresh job
+## 9. Next task - Day 18: accessibility and dark mode
 
-**Goal:** publishing a doc should not require deleting `data/index` by hand.
+**Goal:** the page should work with a keyboard, a screen reader, and at night.
 
 **Build**
 
-1. `app/refresh.py`:
-   - `index_status(settings)` -> counts, index mtime, corpus mtime, `stale`
-   - `refresh_if_stale(settings)` -> rebuild only when the corpus is newer
-   - `refresh(settings)` -> `build_index()` plus the new mtime
-   - `python -m app.refresh [--force]` CLI
-2. `app/main.py`: `GET /api/index/status` (read-only). Do not expose an
-   unauthenticated rebuild endpoint.
-3. Tests: status shape, stale detection with a touched corpus file, no rebuild
-   when fresh, forced rebuild changes mtime/counts.
-4. Document the workflow (edit docs -> run refresh -> status shows fresh).
+1. `app/static/index.html`: a "Skip to results" link, `aria-live="polite"` on the
+   hint, `role="status"` on the answer container, visible `<label>`s for both
+   selects, and `aria-busy` already present.
+2. `app/static/app.js`: move focus to the answer after a response, announce the
+   result in the live region, and keep `:focus-visible` styling on chips,
+   selects, buttons, and citation links.
+3. `app/static/app.css`: a `prefers-color-scheme: dark` token block (same brand
+   hues, adjusted surfaces/ink), plus `:focus-visible` outlines and a
+   `prefers-reduced-motion` guard.
+4. Tests: skip link, live region, labelled controls, dark-mode media query,
+   focus styles, reduced motion.
+5. Document the a11y choices in README.
 
-**Do not** add a scheduler or background worker - a CLI is enough for v1.
+**Do not** add a theme toggle - system preference is enough for v1.
 
 ---
 
@@ -324,3 +331,4 @@ answer.notice  # "" for current-only citations
 | 14 | 29 Oct 2026 | Computed confidence + reasons on `Answer`, quiet UI row, 7 confidence tests, 117 tests |
 | 15 | 29 Oct 2026 | JSON request logs, `/api/metrics` counters and latency, 8 metrics tests, 125 tests |
 | 16 | 29 Oct 2026 | Feedback capture (`app/feedback.py`, `POST/GET /api/feedback`), UI buttons, 8 feedback tests, 133 tests |
+| 17 | 29 Oct 2026 | Index freshness (`app/refresh.py`, `/api/index/status`, CLI `--force`), 6 refresh tests, 139 tests |

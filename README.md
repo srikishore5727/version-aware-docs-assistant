@@ -8,12 +8,12 @@ A software vendor maintains API references, migration guides, and changelogs acr
 
 ## Status
 
-**Sprint 2 · Day 16 of 20 — complete.**
+**Sprint 2 · Day 17 of 20 — complete.**
 
 Scaffold, corpus, chunking, hybrid retrieval, grounded answers with validated
 citations, the answer UI, filters, superseded handling, a relevance floor, a
-CI-gated golden set, a confidence panel, logs and metrics, and answer feedback
-are working. Index refresh is next.
+CI-gated golden set, a confidence panel, logs and metrics, feedback, and an
+index freshness check are working. Accessibility and dark mode are next.
 
 ## Quick start
 
@@ -203,6 +203,23 @@ Every `/api/*` call is timed and logged as one JSON line on stderr:
 Static assets and `/health` are not counted. Counters are per process, so a
 multi-worker deployment needs a real metrics backend.
 
+## Index refresh
+
+Editing a Markdown file does not update FTS5 or Chroma by itself. Check whether
+the indexes match the corpus, then rebuild only when needed:
+
+```bash
+python -m app.refresh            # rebuild only when the corpus is newer
+python -m app.refresh --force    # rebuild regardless
+curl http://127.0.0.1:8000/api/index/status
+# {"indexed":true,"documents":12,"chunks":60,"vectors":60,
+#  "corpus_updated":"...","index_updated":"...","stale":false}
+```
+
+`GET /api/index/status` is read-only and safe to poll. Rebuilding is a CLI
+action on purpose: there is no unauthenticated endpoint that can throw away the
+index.
+
 ## Feedback
 
 Two buttons under every answer ("Helpful" / "Not quite"). A click posts the
@@ -271,8 +288,8 @@ tokens - no build step.
 | 14 | Confidence and explanation panel | Done |
 | 15 | Logging and metrics | Done |
 | 16 | Answer feedback capture | Done |
-| 17 | Index refresh job | Next |
-| 18 | Accessibility and dark mode | Planned |
+| 17 | Index refresh job | Done |
+| 18 | Accessibility and dark mode | Next |
 | 19 | Performance tuning | Planned |
 | 20 | v1.0.0 release | Planned |
 
