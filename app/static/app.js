@@ -242,6 +242,53 @@
     answerBox.hidden = false;
   }
 
+  function renderFeedback(query, data) {
+    var row = el("div", "answer__feedback");
+    var label = el("span", "feedback__label", "Was this useful?");
+    var buttons = [];
+
+    [["helpful", "Helpful"], ["not_helpful", "Not quite"]].forEach(function (pair) {
+      var button = el("button", "feedback__btn", pair[1]);
+      button.type = "button";
+      button.setAttribute("aria-label", pair[1] + ": " + query);
+      button.addEventListener("click", function () {
+        send(pair[0]);
+      });
+      buttons.push(button);
+      row.appendChild(button);
+    });
+
+    row.insertBefore(label, row.firstChild);
+
+    function send(verdict) {
+      buttons.forEach(function (button) {
+        button.disabled = true;
+      });
+      label.textContent = "Saving...";
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: query,
+          verdict: verdict,
+          status: data.status || "",
+          version: data.version || null,
+          doc_type: data.doc_type || null,
+        }),
+      })
+        .then(function (response) {
+          if (!response.ok) throw new Error("HTTP " + response.status);
+          label.textContent = "Thanks - noted.";
+        })
+        .catch(function () {
+          label.textContent = "Could not save feedback.";
+        });
+    }
+
+    answerBox.appendChild(row);
+  }
+
   function renderAnswer(data, query) {
     reset();
     showMode(data.mode);
@@ -290,6 +337,7 @@
       data.reasons,
     );
     renderSources(sources);
+    renderFeedback(query, data);
   }
 
   function renderLoading() {

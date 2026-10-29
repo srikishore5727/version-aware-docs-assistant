@@ -8,12 +8,12 @@ A software vendor maintains API references, migration guides, and changelogs acr
 
 ## Status
 
-**Sprint 2 · Day 15 of 20 — complete.**
+**Sprint 2 · Day 16 of 20 — complete.**
 
 Scaffold, corpus, chunking, hybrid retrieval, grounded answers with validated
 citations, the answer UI, filters, superseded handling, a relevance floor, a
-CI-gated golden set, a confidence panel, and structured logs plus metrics are
-working. Feedback capture is next.
+CI-gated golden set, a confidence panel, logs and metrics, and answer feedback
+are working. Index refresh is next.
 
 ## Quick start
 
@@ -203,6 +203,24 @@ Every `/api/*` call is timed and logged as one JSON line on stderr:
 Static assets and `/health` are not counted. Counters are per process, so a
 multi-worker deployment needs a real metrics backend.
 
+## Feedback
+
+Two buttons under every answer ("Helpful" / "Not quite"). A click posts the
+question and the verdict to `/api/feedback`; the UI says "Thanks - noted." and
+never blocks the page on the request.
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/feedback \
+  -H "Content-Type: application/json" \
+  -d '{"question":"How do I paginate users?","verdict":"helpful","version":"v3"}'
+
+curl http://127.0.0.1:8000/api/feedback
+# {"summary":{"total":1,"helpful":1,"not_helpful":0},"recent":[...]}
+```
+
+Rows are stored in `data/feedback.db` (gitignored), one table, no dashboard.
+The question is stored with the verdict so a wrong answer can be reproduced.
+
 ## Interface
 
 Open <http://127.0.0.1:8000/> for the app. It is plain HTML, CSS, and one
@@ -252,8 +270,8 @@ tokens - no build step.
 | 13 | Evaluation in CI | Done |
 | 14 | Confidence and explanation panel | Done |
 | 15 | Logging and metrics | Done |
-| 16 | Answer feedback capture | Next |
-| 17 | Index refresh job | Planned |
+| 16 | Answer feedback capture | Done |
+| 17 | Index refresh job | Next |
 | 18 | Accessibility and dark mode | Planned |
 | 19 | Performance tuning | Planned |
 | 20 | v1.0.0 release | Planned |

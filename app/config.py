@@ -27,6 +27,7 @@ class Settings:
     corpus_dir: Path
     db_path: Path
     chroma_dir: Path
+    feedback_db: Path = Path("data/feedback.db")
 
     @property
     def has_api_key(self) -> bool:
@@ -51,4 +52,5 @@ def get_settings() -> Settings:
         corpus_dir=Path(os.getenv("VADA_CORPUS_DIR", "corpus")),
         db_path=Path(os.getenv("VADA_DB_PATH", "data/index/vada.db")),
         chroma_dir=Path(os.getenv("VADA_CHROMA_DIR", "data/index/chroma")),
+        feedback_db=Path(os.getenv("VADA_FEEDBACK_DB", "data/feedback.db")),
     )

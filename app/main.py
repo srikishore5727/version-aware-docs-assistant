@@ -10,11 +10,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from pathlib import Path
+from typing import Literal
 import time
 
 from app import __version__
 from app.answer import generate_answer
 from app.config import get_settings
+from app.feedback import FeedbackStore
 from app.observability import log_request, metrics
 from app.retriever import (
     ensure_ready,
@@ -61,6 +63,16 @@ class AskRequest(BaseModel):
         default=None,
         description="Restrict retrieval to one document type (api-reference, migration-guide, changelog)",
     )
+
+
+class FeedbackRequest(BaseModel):
+    """Body of a feedback submission."""
+
+    question: str = Field(description="The question the reader asked")
+    verdict: Literal["helpful", "not_helpful"] = Field(description="Was the answer useful?")
+    status: str = Field(default="", description="Answer status the reader saw")
+    version: str | None = Field(default=None, description="Version scope, if any")
+    doc_type: str | None = Field(default=None, description="Document-type scope, if any")
 
 
 @app.get("/health", tags=["system"])
@@ -184,6 +196,30 @@ def ask(payload: AskRequest) -> dict:
         "mode": "hybrid" if settings.vectors_enabled else "keyword",
         **answer.to_dict(),
     }
+
+
+@app.post("/api/feedback", status_code=201, tags=["feedback"])
+def submit_feedback(payload: FeedbackRequest) -> dict:
+    """Store a reader's verdict next to the question that produced it."""
+    if not payload.question.strip():
+        raise HTTPException(status_code=400, detail="question must not be empty")
+
+    store = FeedbackStore(get_settings().feedback_db)
+    feedback_id = store.record(
+        payload.question.strip(),
+        payload.verdict,
+        status=payload.status,
+        version=payload.version,
+        doc_type=payload.doc_type,
+    )
+    return {"recorded": True, "id": feedback_id}
+
+
+@app.get("/api/feedback", tags=["feedback"])
+def feedback_summary() -> dict:
+    """Counts and the most recent submissions."""
+    store = FeedbackStore(get_settings().feedback_db)
+    return {"summary": store.summary(), "recent": store.recent()}
 
 
 # Mounted last, so every route above wins: /health, /docs, /api still work and
