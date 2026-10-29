@@ -8,11 +8,12 @@ A software vendor maintains API references, migration guides, and changelogs acr
 
 ## Status
 
-**Sprint 2 · Day 10 of 20 — complete.**
+**Sprint 2 · Day 11 of 20 — complete.**
 
 Scaffold, corpus, chunking, hybrid retrieval, grounded answers with validated
-citations, the answer UI, version and document-type filters, and
-superseded-document handling are working. The relevance floor is next.
+citations, the answer UI, version and document-type filters, superseded-document
+handling, and an out-of-scope relevance floor are working. The golden-set
+evaluation harness is next.
 
 ## Quick start
 
@@ -183,7 +184,10 @@ tokens - no build step.
 - When an answer cites a retired version, an amber notice above the answer says
   so in plain language. The model is told to prefer current docs, but the
   notice is computed from the cited metadata, so it cannot be missed.
-- `status: not_found` renders a calm "not found" panel instead of an error.
+- `status: not_found` renders a calm "not found" panel instead of an error, and
+  no source cards. A question that is out of scope (a recipe, the weather) hits
+  the same path: the vector results fall below the relevance floor, so nothing
+  is shown rather than five vaguely related pages.
 - If `/api/ask` is unreachable the page falls back to `/api/search`, so you
   still get the matching documents.
 - The JSON service map moved to `/api`; `/health`, `/docs`, and `/api/*` are
@@ -203,8 +207,8 @@ tokens - no build step.
 | 8 | Version filter | Done |
 | 9 | Document-type filter | Done |
 | 10 | Superseded-document handling | Done |
-| 11 | Not-found and low-confidence path | Next |
-| 12 | Golden-set evaluation harness | Planned |
+| 11 | Not-found and low-confidence path | Done |
+| 12 | Golden-set evaluation harness | Next |
 | 13 | Evaluation in CI | Planned |
 | 14 | Confidence and explanation panel | Planned |
 | 15 | Logging and metrics | Planned |

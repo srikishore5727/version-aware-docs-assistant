@@ -18,7 +18,8 @@
 
   var REASONS = {
     model_not_found: "Nothing in the indexed documentation answers this question.",
-    no_matches: "No indexed document matched this question.",
+    no_matches: "No indexed document is close enough to this question to cite.",
+    below_threshold: "No indexed document is close enough to this question to cite.",
     invalid_citations:
       "The draft answer could not be traced to a retrieved source, so it was withheld.",
     generation_failed: "The language model was unavailable, so no generated answer is shown.",
@@ -241,7 +242,7 @@
         "not_found",
         REASONS[data.reason] || REASONS.model_not_found,
         "",
-        "The answer was withheld rather than guessed.",
+        "Nothing was guessed. Try a version-specific question or one of the examples above.",
       );
       return;
     }
