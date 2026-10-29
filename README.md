@@ -8,12 +8,12 @@ A software vendor maintains API references, migration guides, and changelogs acr
 
 ## Status
 
-**Sprint 2 · Day 11 of 20 — complete.**
+**Sprint 2 · Day 12 of 20 — complete.**
 
 Scaffold, corpus, chunking, hybrid retrieval, grounded answers with validated
 citations, the answer UI, version and document-type filters, superseded-document
-handling, and an out-of-scope relevance floor are working. The golden-set
-evaluation harness is next.
+handling, an out-of-scope relevance floor, and a golden-set retrieval harness
+are working. Wiring the harness into CI is next.
 
 ## Quick start
 
@@ -42,6 +42,22 @@ uvicorn app.main:app --reload
 ```bash
 pytest
 ```
+
+## Evaluation
+
+`eval/golden_set.json` holds 30 question → expected-document pairs covering every
+document in the corpus. The harness scores retrieval only, so it needs no API
+key and no model call:
+
+```bash
+python -m app.evaluate
+# cases: 30  recall@5: 1.00  mrr: 0.91
+```
+
+A case is a hit when a retrieved chunk's `doc_id` is in `expected_doc_ids`; the
+first hit's rank feeds MRR. The run writes `data/eval/report.json` (gitignored)
+for CI artefacts. Baseline with `gemini-embedding-001`: **recall@5 1.00, MRR
+0.91**. CI asserts recall@5 ≥ 0.85 over a hermetically built index.
 
 ## Corpus
 
@@ -208,8 +224,8 @@ tokens - no build step.
 | 9 | Document-type filter | Done |
 | 10 | Superseded-document handling | Done |
 | 11 | Not-found and low-confidence path | Done |
-| 12 | Golden-set evaluation harness | Next |
-| 13 | Evaluation in CI | Planned |
+| 12 | Golden-set evaluation harness | Done |
+| 13 | Evaluation in CI | Next |
 | 14 | Confidence and explanation panel | Planned |
 | 15 | Logging and metrics | Planned |
 | 16 | Answer feedback capture | Planned |

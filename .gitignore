@@ -19,6 +19,7 @@ env/
 *.sqlite
 *.sqlite3
 data/index/
+data/eval/
 .cache/
 
 # Logs
