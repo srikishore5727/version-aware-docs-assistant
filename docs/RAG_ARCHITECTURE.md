@@ -130,6 +130,7 @@ the not-found state. An uncited answer is never shown.
 | Filter default | Latest stable version (v3) |
 | Missing version | Treated as `unknown`, never silently matched to a real version |
 | Mixed versions | Answer states which version each claim applies to |
+| Confidence | Computed in code from the validated citations: high = 2+ sources, one version, all current; medium = single source, mixed versions, or superseded; low = not-found or extractive fallback |
 
 ### 7.1 Superseded documents
 

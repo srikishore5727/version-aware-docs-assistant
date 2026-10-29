@@ -26,6 +26,7 @@ def test_script_calls_ask_and_keeps_the_search_fallback() -> None:
     assert "/api/ask" in script
     assert "/api/search" in script
     assert "citationText" in script
+    assert "answer__confidence" in script
 
 
 def test_ui_assets_are_served() -> None:

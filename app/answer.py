@@ -52,6 +52,11 @@ class Answer:
     model: str = "extractive"
     reason: str = ""
     notice: str = ""
+    confidence: str = ""
+    reasons: list[str] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        self.confidence, self.reasons = assess_confidence(self.status, self.sources, self.model)
 
     def to_dict(self) -> dict:
         return {
@@ -61,7 +66,48 @@ class Answer:
             "model": self.model,
             "reason": self.reason,
             "notice": self.notice,
+            "confidence": self.confidence,
+            "reasons": self.reasons,
         }
+
+
+def assess_confidence(status: str, sources: list[dict], model: str) -> tuple[str, list[str]]:
+    """Explain, in code, how much weight the answer deserves.
+
+    The model never sets this. It is derived from the validated citations, so a
+    confident-sounding sentence cannot promote itself.
+
+    - high: two or more sources, one version, all current
+    - medium: a single source, mixed versions, or a superseded source
+    - low: no verified source, or the extractive fallback
+    """
+    if status != "answered" or not sources:
+        return "low", ["no verified source"]
+
+    if model == "extractive":
+        return "low", ["offline fallback - the top passage is quoted verbatim"]
+
+    count = len(sources)
+    versions = sorted({source.get("version") for source in sources if source.get("version")})
+    superseded = sorted(
+        {
+            source.get("version")
+            for source in sources
+            if source.get("status") == "superseded" and source.get("version")
+        }
+    )
+
+    reasons = [f"{count} sources agree" if count > 1 else "a single source"]
+    if len(versions) > 1:
+        reasons.append("mixed versions: " + ", ".join(versions))
+    elif versions:
+        reasons.append("all from " + versions[0])
+    if superseded:
+        reasons.append("includes superseded " + ", ".join(superseded))
+
+    if count >= 2 and len(versions) == 1 and not superseded:
+        return "high", reasons
+    return "medium", reasons
 
 
 def render_context(chunks: list[SearchResult]) -> str:

@@ -8,12 +8,12 @@ A software vendor maintains API references, migration guides, and changelogs acr
 
 ## Status
 
-**Sprint 2 · Day 13 of 20 — complete.**
+**Sprint 2 · Day 14 of 20 — complete.**
 
 Scaffold, corpus, chunking, hybrid retrieval, grounded answers with validated
-citations, the answer UI, version and document-type filters, superseded-document
-handling, an out-of-scope relevance floor, and a golden set that gates CI are
-working. The confidence panel is next.
+citations, the answer UI, filters, superseded handling, a relevance floor, a
+CI-gated golden set, and a computed confidence panel are working. Logging and
+metrics are next.
 
 ## Quick start
 
@@ -204,6 +204,9 @@ tokens - no build step.
 - When an answer cites a retired version, an amber notice above the answer says
   so in plain language. The model is told to prefer current docs, but the
   notice is computed from the cited metadata, so it cannot be missed.
+- A confidence row under the answer says **high**, **medium**, or **low** and
+  why ("5 sources agree · all from v3"). It is derived from the validated
+  citations, never from the model's tone.
 - `status: not_found` renders a calm "not found" panel instead of an error, and
   no source cards. A question that is out of scope (a recipe, the weather) hits
   the same path: the vector results fall below the relevance floor, so nothing
@@ -230,8 +233,8 @@ tokens - no build step.
 | 11 | Not-found and low-confidence path | Done |
 | 12 | Golden-set evaluation harness | Done |
 | 13 | Evaluation in CI | Done |
-| 14 | Confidence and explanation panel | Next |
-| 15 | Logging and metrics | Planned |
+| 14 | Confidence and explanation panel | Done |
+| 15 | Logging and metrics | Next |
 | 16 | Answer feedback capture | Planned |
 | 17 | Index refresh job | Planned |
 | 18 | Accessibility and dark mode | Planned |
