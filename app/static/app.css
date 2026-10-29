@@ -1,4 +1,5 @@
 :root {
+  color-scheme: light;
   --ink: #151518;
   --ink-2: #3f3f46;
   --muted: #71717a;
@@ -8,15 +9,72 @@
   --accent: #4f46e5;
   --accent-ink: #3730a3;
   --accent-soft: #eef2ff;
+  --accent-line: #c7d2fe;
+  --on-accent: #ffffff;
   --ok-bg: #ecfdf5;
   --ok-ink: #047857;
   --warn-bg: #fef3c7;
   --warn-ink: #b45309;
   --danger: #b91c1c;
+  --code-bg: #f4f4f5;
+  --chip-bg: rgba(255, 255, 255, 0.7);
+  --empty-bg: rgba(255, 255, 255, 0.6);
+  --notice-bg: #fffbeb;
+  --notice-line: #fde68a;
+  --notice-ink: #92400e;
+  --miss-line: #d4d4d8;
+  --placeholder: #a1a1aa;
+  --glow: rgba(99, 102, 241, 0.12);
+  --focus-ring: rgba(79, 70, 229, 0.14);
+  --btn-bg: #151518;
+  --btn-ink: #ffffff;
+  --conf-high: #16a34a;
+  --conf-medium: #d97706;
+  --conf-low: #94a3b8;
   --radius: 18px;
   --shadow: 0 18px 40px -28px rgba(21, 21, 24, 0.35);
   --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* Same brand, lower light. Only the surfaces and inks move; the accent keeps
+   its hue. Every colour below is a token so no component needs a dark variant. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --ink: #f4f4f5;
+    --ink-2: #d4d4d8;
+    --muted: #a1a1aa;
+    --line: #2e2e35;
+    --paper: #101014;
+    --card: #18181d;
+    --accent: #a5b4fc;
+    --accent-ink: #c7d2fe;
+    --accent-soft: #232338;
+    --accent-line: #4f46e5;
+    --on-accent: #18181b;
+    --ok-bg: #0f2b21;
+    --ok-ink: #6ee7b7;
+    --warn-bg: #2e2410;
+    --warn-ink: #fcd34d;
+    --danger: #fca5a5;
+    --code-bg: #26262c;
+    --chip-bg: rgba(255, 255, 255, 0.04);
+    --empty-bg: rgba(255, 255, 255, 0.03);
+    --notice-bg: #2b2413;
+    --notice-line: #4a3a12;
+    --notice-ink: #fcd34d;
+    --miss-line: #3f3f46;
+    --placeholder: #8b8b95;
+    --glow: rgba(129, 140, 248, 0.14);
+    --focus-ring: rgba(165, 180, 252, 0.45);
+    --btn-bg: #e4e4e7;
+    --btn-ink: #18181b;
+    --conf-high: #4ade80;
+    --conf-medium: #fbbf24;
+    --conf-low: #94a3b8;
+    --shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.8);
+  }
 }
 
 * {
@@ -35,7 +93,7 @@ body {
   font-size: 16px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
-  background-image: radial-gradient(900px 420px at 18% -12%, rgba(99, 102, 241, 0.12), transparent 65%);
+  background-image: radial-gradient(900px 420px at 18% -12%, var(--glow), transparent 65%);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -61,13 +119,12 @@ a {
   position: absolute;
   left: 16px;
   top: -48px;
-  background: var(--ink);
-  color: #fff;
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   padding: 10px 16px;
   border-radius: 10px;
   font-size: 13px;
   text-decoration: none;
-  transition: top 0.15s ease;
   z-index: 10;
 }
 
@@ -170,7 +227,7 @@ h1 em {
 
 .search:focus-within {
   border-color: var(--accent);
-  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12), var(--shadow);
+  box-shadow: 0 0 0 4px var(--focus-ring), var(--shadow);
 }
 
 .search input {
@@ -186,7 +243,7 @@ h1 em {
 }
 
 .search input::placeholder {
-  color: #a1a1aa;
+  color: var(--placeholder);
 }
 
 .search input::-webkit-search-cancel-button,
@@ -221,8 +278,8 @@ h1 em {
 .search button {
   border: 0;
   border-radius: 11px;
-  background: var(--ink);
-  color: #fff;
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   font: inherit;
   font-size: 14.5px;
   font-weight: 650;
@@ -245,10 +302,27 @@ h1 em {
 }
 
 .search button:focus-visible,
+.search select:focus-visible,
 .chip:focus-visible,
-.card__link:focus-visible {
+.card__link:focus-visible,
+.feedback__btn:focus-visible,
+.foot a:focus-visible,
+.skip:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* The answer and results panel take programmatic focus after a response. The
+   skip link makes the same target reachable by keyboard. */
+.results:focus,
+.answer:focus {
+  outline: none;
+}
+
+.results:focus-visible,
+.answer:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
 }
 
 .chips {
@@ -260,7 +334,7 @@ h1 em {
 
 .chip {
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--chip-bg);
   color: var(--ink-2);
   border-radius: 999px;
   padding: 7px 14px;
@@ -272,7 +346,7 @@ h1 em {
 }
 
 .chip:hover {
-  border-color: #c7d2fe;
+  border-color: var(--accent-line);
   background: var(--accent-soft);
   color: var(--accent-ink);
 }
@@ -306,7 +380,7 @@ h1 em {
 }
 
 .answer--miss {
-  border-left: 3px solid #d4d4d8;
+  border-left: 3px solid var(--miss-line);
   box-shadow: none;
 }
 
@@ -349,9 +423,9 @@ h1 em {
   margin: 0 0 12px;
   padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid #fde68a;
-  background: #fffbeb;
-  color: #92400e;
+  border: 1px solid var(--notice-line);
+  background: var(--notice-bg);
+  color: var(--notice-ink);
   font-size: 13px;
   line-height: 1.45;
 }
@@ -374,15 +448,15 @@ h1 em {
 }
 
 .answer__confidence--high .confidence__dot {
-  background: #16a34a;
+  background: var(--conf-high);
 }
 
 .answer__confidence--medium .confidence__dot {
-  background: #d97706;
+  background: var(--conf-medium);
 }
 
 .answer__confidence--low .confidence__dot {
-  background: #94a3b8;
+  background: var(--conf-low);
 }
 
 .confidence__label {
@@ -433,7 +507,7 @@ h1 em {
 .answer__body code {
   font-family: var(--mono);
   font-size: 0.82em;
-  background: #f4f4f5;
+  background: var(--code-bg);
   border-radius: 5px;
   padding: 1px 4px;
 }
@@ -444,8 +518,8 @@ h1 em {
 }
 
 .badge--miss {
-  background: #f4f4f5;
-  color: #52525b;
+  background: var(--code-bg);
+  color: var(--ink-2);
 }
 
 .cite {
@@ -464,8 +538,9 @@ h1 em {
 .cite:hover,
 .cite:focus-visible {
   background: var(--accent);
-  color: #fff;
-  outline: none;
+  color: var(--on-accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .summary {
@@ -501,14 +576,14 @@ h1 em {
 }
 
 .card:hover {
-  border-color: #c7d2fe;
+  border-color: var(--accent-line);
   box-shadow: var(--shadow);
   transform: translateY(-1px);
 }
 
 .card:target {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14), var(--shadow);
+  box-shadow: 0 0 0 3px var(--focus-ring), var(--shadow);
 }
 
 .card__cite {
@@ -518,8 +593,8 @@ h1 em {
   width: 22px;
   height: 22px;
   border-radius: 7px;
-  background: var(--ink);
-  color: #fff;
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   font-family: var(--mono);
   font-size: 11.5px;
   font-weight: 700;
@@ -590,7 +665,7 @@ h1 em {
 .card__text code {
   font-family: var(--mono);
   font-size: 12.5px;
-  background: #f4f4f5;
+  background: var(--code-bg);
   border-radius: 5px;
   padding: 1px 3px;
 }
@@ -627,7 +702,7 @@ h1 em {
   height: 128px;
   border-radius: var(--radius);
   border: 1px solid var(--line);
-  background: linear-gradient(100deg, #ffffff 30%, #f4f4f5 50%, #ffffff 70%);
+  background: linear-gradient(100deg, var(--card) 30%, var(--code-bg) 50%, var(--card) 70%);
   background-size: 220% 100%;
   animation: shimmer 1.3s linear infinite;
 }
@@ -648,17 +723,22 @@ h1 em {
   .skeleton {
     animation: none;
   }
+  .skip,
+  .search,
+  .search button,
+  .chip,
   .card,
   .card:hover {
+    transition: none;
     transform: none;
   }
 }
 
 .empty {
-  border: 1px dashed #d4d4d8;
+  border: 1px dashed var(--miss-line);
   border-radius: var(--radius);
   padding: 28px;
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--empty-bg);
 }
 
 .empty h2 {

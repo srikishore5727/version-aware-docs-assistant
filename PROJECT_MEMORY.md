@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 29 October 2026 - Day 17 complete
+**Last updated:** 29 October 2026 - Day 18 complete
 
 ---
 
@@ -120,8 +120,8 @@ Planned additions: `tests/golden_set.json`, `app/metrics.py`.
 | 15 | Logging and metrics | **Done** |
 | 16 | Answer feedback capture | **Done** |
 | 17 | Index refresh job | **Done** |
-| 18 | Accessibility and dark mode | Next |
-| 19 | Performance tuning | Planned |
+| 18 | Accessibility and dark mode | **Done** |
+| 19 | Performance tuning | Next |
 | 20 | v1.0.0 release | Planned |
 
 ---
@@ -170,7 +170,7 @@ pytest                          # run tests
 
 ---
 
-## 8. Current state (end of Day 11)
+## 8. Current state (end of Day 18)
 
 - `corpus/` has 12 sample Markdown docs across v1/v2/v3 (v3 `current`, v1/v2
   `superseded`). Ingestion produces 60 chunks with full citation metadata.
@@ -242,7 +242,13 @@ pytest                          # run tests
   `refresh_if_stale()` rebuild; `python -m app.refresh [--force]` is the CLI.
   `GET /api/index/status` is read-only; there is no unauthenticated rebuild
   endpoint.
-- 139 tests pass locally.
+- **Accessibility + theme** (`app/static/`): skip link to a `tabindex="-1"`
+  results region, `role="status"` live hint, labels on every control, focus
+  moved to the answer panel after a response (`focusResult()`), visible
+  `:focus-visible` rings, and a full `prefers-color-scheme: dark` token block.
+  `prefers-reduced-motion` disables the shimmer and hover lifts. No theme
+  toggle; `meta color-scheme` + `color-scheme` handle native controls.
+- 146 tests pass locally.
 
 **APIs (stable - build on these next):**
 
@@ -257,32 +263,34 @@ answer.notice  # "" for current-only citations
 
 - `SearchResult` fields: `chunk_id, doc_id, title, doc_type, version, status,
   source_url, last_updated, section, text, score, matched_by`
-- `Answer` fields: `status, answer, sources, model, reason, notice`; each source
-  carries `index`, the citation metadata, and its `text`.
+- `Answer` fields: `status, answer, sources, model, reason, notice, confidence,
+  reasons`; each source carries `index`, the citation metadata, and its `text`.
 - Scores are now rounded to 6 decimals because of the penalty.
 
 ---
 
-## 9. Next task - Day 18: accessibility and dark mode
+## 9. Next task - Day 19: performance tuning
 
-**Goal:** the page should work with a keyboard, a screen reader, and at night.
+**Goal:** a repeated question should not pay for the same embedding and model
+call twice, and the latency should be a measured number rather than a claim.
 
 **Build**
 
-1. `app/static/index.html`: a "Skip to results" link, `aria-live="polite"` on the
-   hint, `role="status"` on the answer container, visible `<label>`s for both
-   selects, and `aria-busy` already present.
-2. `app/static/app.js`: move focus to the answer after a response, announce the
-   result in the live region, and keep `:focus-visible` styling on chips,
-   selects, buttons, and citation links.
-3. `app/static/app.css`: a `prefers-color-scheme: dark` token block (same brand
-   hues, adjusted surfaces/ink), plus `:focus-visible` outlines and a
-   `prefers-reduced-motion` guard.
-4. Tests: skip link, live region, labelled controls, dark-mode media query,
-   focus styles, reduced motion.
-5. Document the a11y choices in README.
+1. `app/cache.py`: `AnswerCache`, a thread-safe bounded LRU keyed by
+   `(question, limit, version, doc_type)`. `get`, `set`, `clear`, `stats`
+   (`hits`, `misses`, `size`). `VADA_CACHE_SIZE` defaults to 128; `0` disables.
+2. `app/main.py`: consult the cache in `/api/ask` before retrieval, echo
+   `"cached": true` on a hit, and never cache an error or a 4xx.
+3. `app/observability.py`: add `cache_hits` / `cache_misses` to `Metrics` and
+   `snapshot()`.
+4. `app/benchmark.py`: `python -m app.benchmark` runs the 30 golden questions
+   through retrieval and prints p50/p95 latency plus the cache hit rate.
+   Retrieval only, so it runs offline.
+5. Tests: LRU eviction, key isolation by filter, stats, a second identical ask
+   is a hit, a disabled cache still answers, percentile helper.
+6. `README.md`, `PROJECT_MEMORY.md`: how to run it and what it showed.
 
-**Do not** add a theme toggle - system preference is enough for v1.
+**Do not** add Redis, a background worker, or response streaming.
 
 ---
 
@@ -332,3 +340,4 @@ answer.notice  # "" for current-only citations
 | 15 | 29 Oct 2026 | JSON request logs, `/api/metrics` counters and latency, 8 metrics tests, 125 tests |
 | 16 | 29 Oct 2026 | Feedback capture (`app/feedback.py`, `POST/GET /api/feedback`), UI buttons, 8 feedback tests, 133 tests |
 | 17 | 29 Oct 2026 | Index freshness (`app/refresh.py`, `/api/index/status`, CLI `--force`), 6 refresh tests, 139 tests |
+| 18 | 29 Oct 2026 | Accessibility and dark mode: skip link, live status, focus management, focus rings, `prefers-color-scheme` token block, reduced motion, 7 a11y tests, 146 tests |
