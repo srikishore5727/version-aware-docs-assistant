@@ -2,6 +2,7 @@
 
 from fastapi.testclient import TestClient
 
+from app import __version__
 from app.main import app
 
 client = TestClient(app)
@@ -11,7 +12,7 @@ def test_health_returns_ok() -> None:
     response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "service": "vada", "version": "0.1.0"}
+    assert response.json() == {"status": "ok", "service": "vada", "version": __version__}
 
 
 def test_api_lists_service_metadata() -> None:
