@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 29 October 2026 - Day 18 complete
+**Last updated:** 29 October 2026 - Day 19 complete
 
 ---
 
@@ -121,8 +121,8 @@ Planned additions: `tests/golden_set.json`, `app/metrics.py`.
 | 16 | Answer feedback capture | **Done** |
 | 17 | Index refresh job | **Done** |
 | 18 | Accessibility and dark mode | **Done** |
-| 19 | Performance tuning | Next |
-| 20 | v1.0.0 release | Planned |
+| 19 | Performance tuning | **Done** |
+| 20 | v1.0.0 release | Next |
 
 ---
 
@@ -170,7 +170,7 @@ pytest                          # run tests
 
 ---
 
-## 8. Current state (end of Day 18)
+## 8. Current state (end of Day 19)
 
 - `corpus/` has 12 sample Markdown docs across v1/v2/v3 (v3 `current`, v1/v2
   `superseded`). Ingestion produces 60 chunks with full citation metadata.
@@ -248,7 +248,16 @@ pytest                          # run tests
   `:focus-visible` rings, and a full `prefers-color-scheme: dark` token block.
   `prefers-reduced-motion` disables the shimmer and hover lifts. No theme
   toggle; `meta color-scheme` + `color-scheme` handle native controls.
-- 146 tests pass locally.
+- **Answer cache** (`app/cache.py`): thread-safe LRU of `/api/ask` payloads,
+  keyed by question (case/space normalised), limit, version, doc type, and the
+  FTS5 mtime. `VADA_CACHE_SIZE` defaults to 128; `0` disables. Hits echo
+  `"cached": true`; `generation_failed` answers are never stored. `/api/metrics`
+  exposes `cache_hits` / `cache_misses`.
+- **Benchmark** (`app/benchmark.py`): `python -m app.benchmark` runs the 30
+  golden questions twice with a stubbed citation, so no model call. Latest:
+  cold p50 ~1.17 s (Gemini embeddings), warm p50 ~0 ms, 30/60 hits by design.
+  Live second ask: 5.66 s -> 98 ms.
+- 160 tests pass locally.
 
 **APIs (stable - build on these next):**
 
@@ -269,28 +278,24 @@ answer.notice  # "" for current-only citations
 
 ---
 
-## 9. Next task - Day 19: performance tuning
+## 9. Next task - Day 20: v1.0.0 release
 
-**Goal:** a repeated question should not pay for the same embedding and model
-call twice, and the latency should be a measured number rather than a claim.
+**Goal:** cut a release someone else can clone, run, and check.
 
 **Build**
 
-1. `app/cache.py`: `AnswerCache`, a thread-safe bounded LRU keyed by
-   `(question, limit, version, doc_type)`. `get`, `set`, `clear`, `stats`
-   (`hits`, `misses`, `size`). `VADA_CACHE_SIZE` defaults to 128; `0` disables.
-2. `app/main.py`: consult the cache in `/api/ask` before retrieval, echo
-   `"cached": true` on a hit, and never cache an error or a 4xx.
-3. `app/observability.py`: add `cache_hits` / `cache_misses` to `Metrics` and
-   `snapshot()`.
-4. `app/benchmark.py`: `python -m app.benchmark` runs the 30 golden questions
-   through retrieval and prints p50/p95 latency plus the cache hit rate.
-   Retrieval only, so it runs offline.
-5. Tests: LRU eviction, key isolation by filter, stats, a second identical ask
-   is a hit, a disabled cache still answers, percentile helper.
-6. `README.md`, `PROJECT_MEMORY.md`: how to run it and what it showed.
+1. `app/__init__.py`: set `__version__ = "1.0.0"`.
+2. `CHANGELOG.md`: Keep a Changelog format with a dated `1.0.0` section
+   summarising retrieval, answers, UI, quality, and operations.
+3. `README.md`: status "v1.0.0", CI and Python badges, confirm the 20-day table
+   is all Done, and add a short "What's in 1.0" list.
+4. Verify: full `pytest`, `python -m app.evaluate --min-recall 0.85`,
+   `python -m app.benchmark`, then a live smoke of `/health`, `/api/index/status`,
+   `/api/ask` (twice, second `cached: true`), and `/api/metrics`.
+5. Squash-merge the release PR, tag `v1.0.0` on the merge commit, and push the
+   tag.
 
-**Do not** add Redis, a background worker, or response streaming.
+**Do not** add features or refactor during release week.
 
 ---
 
@@ -341,3 +346,4 @@ call twice, and the latency should be a measured number rather than a claim.
 | 16 | 29 Oct 2026 | Feedback capture (`app/feedback.py`, `POST/GET /api/feedback`), UI buttons, 8 feedback tests, 133 tests |
 | 17 | 29 Oct 2026 | Index freshness (`app/refresh.py`, `/api/index/status`, CLI `--force`), 6 refresh tests, 139 tests |
 | 18 | 29 Oct 2026 | Accessibility and dark mode: skip link, live status, focus management, focus rings, `prefers-color-scheme` token block, reduced motion, 7 a11y tests, 146 tests |
+| 19 | 29 Oct 2026 | Answer cache (`app/cache.py`, `VADA_CACHE_SIZE`, mtime invalidation), benchmark (`app/benchmark.py`), cache counters, 14 cache/benchmark tests, 160 tests |

@@ -13,6 +13,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from app.cache import DEFAULT_MAXSIZE
+
 load_dotenv()
 
 
@@ -28,6 +30,7 @@ class Settings:
     db_path: Path
     chroma_dir: Path
     feedback_db: Path = Path("data/feedback.db")
+    cache_size: int = DEFAULT_MAXSIZE
 
     @property
     def has_api_key(self) -> bool:
@@ -36,6 +39,17 @@ class Settings:
     @property
     def vectors_enabled(self) -> bool:
         return self.embeddings_mode != "off"
+
+
+def _int_env(name: str, default: int) -> int:
+    """Read a non-negative integer, falling back instead of crashing."""
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return default
+    try:
+        return max(0, int(raw))
+    except ValueError:
+        return default
 
 
 def get_settings() -> Settings:
@@ -53,4 +67,5 @@ def get_settings() -> Settings:
         db_path=Path(os.getenv("VADA_DB_PATH", "data/index/vada.db")),
         chroma_dir=Path(os.getenv("VADA_CHROMA_DIR", "data/index/chroma")),
         feedback_db=Path(os.getenv("VADA_FEEDBACK_DB", "data/feedback.db")),
+        cache_size=_int_env("VADA_CACHE_SIZE", DEFAULT_MAXSIZE),
     )

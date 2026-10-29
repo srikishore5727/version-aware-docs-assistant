@@ -49,6 +49,8 @@ class Metrics:
     answered: int = 0
     not_found: int = 0
     errors: int = 0
+    cache_hits: int = 0
+    cache_misses: int = 0
     total_ms: float = 0.0
     max_ms: float = 0.0
     slowest_endpoint: str = ""
@@ -71,6 +73,13 @@ class Metrics:
             elif status == "not_found":
                 self.not_found += 1
 
+    def record_cache(self, hit: bool) -> None:
+        with self._lock:
+            if hit:
+                self.cache_hits += 1
+            else:
+                self.cache_misses += 1
+
     def snapshot(self) -> dict:
         with self._lock:
             average = self.total_ms / self.requests if self.requests else 0.0
@@ -79,6 +88,8 @@ class Metrics:
                 "answered": self.answered,
                 "not_found": self.not_found,
                 "errors": self.errors,
+                "cache_hits": self.cache_hits,
+                "cache_misses": self.cache_misses,
                 "avg_ms": round(average, 2),
                 "max_ms": round(self.max_ms, 2),
                 "slowest_endpoint": self.slowest_endpoint,
@@ -90,6 +101,8 @@ class Metrics:
             self.answered = 0
             self.not_found = 0
             self.errors = 0
+            self.cache_hits = 0
+            self.cache_misses = 0
             self.total_ms = 0.0
             self.max_ms = 0.0
             self.slowest_endpoint = ""

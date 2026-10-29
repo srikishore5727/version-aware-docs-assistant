@@ -15,6 +15,7 @@ import time
 
 from app import __version__
 from app.answer import generate_answer
+from app.cache import AnswerCache, cache_key, index_fingerprint
 from app.config import get_settings
 from app.feedback import FeedbackStore
 from app.observability import log_request, metrics
@@ -36,6 +37,10 @@ app = FastAPI(
     description=APP_DESCRIPTION,
     version=__version__,
 )
+
+# Process-local, bounded, and invalidated by an index rebuild (the key holds the
+# FTS5 mtime). Set VADA_CACHE_SIZE=0 to turn it off.
+answer_cache = AnswerCache(get_settings().cache_size)
 
 
 class SearchRequest(BaseModel):
@@ -183,6 +188,25 @@ def ask(payload: AskRequest) -> dict:
     try:
         scope = normalize_version(payload.version)
         kind = normalize_doc_type(payload.doc_type)
+    except QueryError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    key = cache_key(
+        payload.question,
+        payload.limit,
+        scope,
+        kind,
+        index_fingerprint(settings.db_path),
+    )
+    cached = answer_cache.get(key)
+    if cached is not None:
+        metrics.record_cache(hit=True)
+        metrics.record_outcome(cached["status"])
+        return {**cached, "question": payload.question, "cached": True}
+
+    metrics.record_cache(hit=False)
+
+    try:
         chunks = hybrid_search(
             payload.question,
             limit=payload.limit,
@@ -198,13 +222,24 @@ def ask(payload: AskRequest) -> dict:
     answer = generate_answer(payload.question, chunks, settings=settings)
     metrics.record_outcome(answer.status)
 
-    return {
+    response = {
         "question": payload.question,
         "version": scope,
         "doc_type": kind,
         "mode": "hybrid" if settings.vectors_enabled else "keyword",
         **answer.to_dict(),
+        "cached": False,
     }
+
+    # A transient model failure must not be replayed for the life of the cache.
+    if answer.status == "answered" or answer.reason in {
+        "no_matches",
+        "below_threshold",
+        "model_not_found",
+    }:
+        answer_cache.set(key, response)
+
+    return response
 
 
 @app.post("/api/feedback", status_code=201, tags=["feedback"])

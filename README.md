@@ -8,13 +8,13 @@ A software vendor maintains API references, migration guides, and changelogs acr
 
 ## Status
 
-**Sprint 2 · Day 18 of 20 — complete.**
+**Sprint 2 · Day 19 of 20 — complete.**
 
 Scaffold, corpus, chunking, hybrid retrieval, grounded answers with validated
 citations, the answer UI, filters, superseded handling, a relevance floor, a
 CI-gated golden set, a confidence panel, logs and metrics, feedback, an index
-freshness check, and accessible light/dark themes are working. Performance
-tuning is next.
+freshness check, accessible light/dark themes, and an answer cache with a
+benchmark are working. The v1.0.0 release is next.
 
 ## Quick start
 
@@ -198,11 +198,29 @@ Every `/api/*` call is timed and logged as one JSON line on stderr:
 `GET /api/metrics` returns per-process counters:
 
 ```json
-{"requests": 12, "answered": 9, "not_found": 3, "errors": 0, "avg_ms": 38.4, "max_ms": 210.9, "slowest_endpoint": "/api/ask"}
+{"requests": 12, "answered": 9, "not_found": 3, "errors": 0, "cache_hits": 4, "cache_misses": 8, "avg_ms": 38.4, "max_ms": 210.9, "slowest_endpoint": "/api/ask"}
 ```
 
 Static assets and `/health` are not counted. Counters are per process, so a
 multi-worker deployment needs a real metrics backend.
+
+## Performance
+
+`/api/ask` keeps a bounded in-process LRU of answers (`app/cache.py`). The key
+holds the question, limit, version, document type, and the FTS5 file mtime, so
+an index rebuild invalidates entries without a restart. `VADA_CACHE_SIZE`
+defaults to 128; set it to `0` to disable caching.
+
+```bash
+python -m app.benchmark
+# cases: 30, rounds: 2, hits: 30/60
+# cold p50 ~1.2 s, warm p50 ~0 ms
+```
+
+The benchmark stubs generation with a valid citation, so it measures retrieval,
+citation validation, and cache overhead without spending model quota. Live with
+Gemini embeddings, the second identical ask drops from ~5.7 s to ~100 ms,
+returns the same answer, and reports `"cached": true`.
 
 ## Index refresh
 
@@ -308,8 +326,8 @@ tokens - no build step.
 | 16 | Answer feedback capture | Done |
 | 17 | Index refresh job | Done |
 | 18 | Accessibility and dark mode | Done |
-| 19 | Performance tuning | Next |
-| 20 | v1.0.0 release | Planned |
+| 19 | Performance tuning | Done |
+| 20 | v1.0.0 release | Next |
 
 ## Documentation
 
