@@ -18,6 +18,7 @@ from app.answer import generate_answer
 from app.config import get_settings
 from app.feedback import FeedbackStore
 from app.observability import log_request, metrics
+from app.refresh import index_status
 from app.retriever import (
     ensure_ready,
     hybrid_search,
@@ -122,6 +123,14 @@ def metadata() -> dict:
 def metrics_snapshot() -> dict:
     """Process-local request counters and latency figures."""
     return metrics.snapshot()
+
+
+@app.get("/api/index/status", tags=["system"])
+def index_health() -> dict:
+    """Whether the indexes match the corpus on disk."""
+    settings = get_settings()
+    ensure_ready(settings)
+    return index_status(settings)
 
 
 @app.post("/api/search", tags=["search"])

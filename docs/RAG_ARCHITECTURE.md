@@ -161,6 +161,7 @@ cannot be hallucinated away.
 | `POST /api/ask` | Answer + citations + sources | Built |
 | `POST /api/feedback` | Store a reader verdict | Built |
 | `GET /api/feedback` | Verdict counts and recent rows | Built |
+| `GET /api/index/status` | Corpus/index freshness and counts | Built |
 | `GET /api/metrics` | Process request counters and latency | Built |
 | `GET /health` | Liveness | Built |
 
