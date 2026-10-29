@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 29 October 2026 - Day 19 complete
+**Last updated:** 29 October 2026 - v1.0.0 released
 
 ---
 
@@ -122,7 +122,7 @@ Planned additions: `tests/golden_set.json`, `app/metrics.py`.
 | 17 | Index refresh job | **Done** |
 | 18 | Accessibility and dark mode | **Done** |
 | 19 | Performance tuning | **Done** |
-| 20 | v1.0.0 release | Next |
+| 20 | v1.0.0 release | **Done** |
 
 ---
 
@@ -170,7 +170,7 @@ pytest                          # run tests
 
 ---
 
-## 8. Current state (end of Day 19)
+## 8. Current state (end of Day 20 - v1.0.0)
 
 - `corpus/` has 12 sample Markdown docs across v1/v2/v3 (v3 `current`, v1/v2
   `superseded`). Ingestion produces 60 chunks with full citation metadata.
@@ -258,6 +258,8 @@ pytest                          # run tests
   cold p50 ~1.17 s (Gemini embeddings), warm p50 ~0 ms, 30/60 hits by design.
   Live second ask: 5.66 s -> 98 ms.
 - 160 tests pass locally.
+- **Release**: `app/__init__.py` is `1.0.0`, `CHANGELOG.md` records the full
+  feature set, and the README carries CI/Python badges plus a 20/20 plan table.
 
 **APIs (stable - build on these next):**
 
@@ -278,24 +280,21 @@ answer.notice  # "" for current-only citations
 
 ---
 
-## 9. Next task - Day 20: v1.0.0 release
+## 9. After 1.0 - maintenance notes
 
-**Goal:** cut a release someone else can clone, run, and check.
+There is no Day 21 in the plan. If this project continues, the natural next
+steps are:
 
-**Build**
+1. Replace the 12-document sample corpus with a real docs pipeline (the ingest
+   and citation contract stay the same).
+2. Move metrics and the answer cache out of process before running multiple
+   workers (Prometheus and Redis are the usual choices).
+3. Add a reranker only if the golden set shows a retrieval gap; today recall@5
+   is 1.00 with `gemini-embedding-001`.
+4. Re-run `python -m app.refresh`, `python -m app.evaluate --min-recall 0.85`,
+   and `python -m app.benchmark` after any corpus or model change.
 
-1. `app/__init__.py`: set `__version__ = "1.0.0"`.
-2. `CHANGELOG.md`: Keep a Changelog format with a dated `1.0.0` section
-   summarising retrieval, answers, UI, quality, and operations.
-3. `README.md`: status "v1.0.0", CI and Python badges, confirm the 20-day table
-   is all Done, and add a short "What's in 1.0" list.
-4. Verify: full `pytest`, `python -m app.evaluate --min-recall 0.85`,
-   `python -m app.benchmark`, then a live smoke of `/health`, `/api/index/status`,
-   `/api/ask` (twice, second `cached: true`), and `/api/metrics`.
-5. Squash-merge the release PR, tag `v1.0.0` on the merge commit, and push the
-   tag.
-
-**Do not** add features or refactor during release week.
+Keep `PROJECT_MEMORY.md` current if the project is handed on.
 
 ---
 
@@ -347,3 +346,4 @@ answer.notice  # "" for current-only citations
 | 17 | 29 Oct 2026 | Index freshness (`app/refresh.py`, `/api/index/status`, CLI `--force`), 6 refresh tests, 139 tests |
 | 18 | 29 Oct 2026 | Accessibility and dark mode: skip link, live status, focus management, focus rings, `prefers-color-scheme` token block, reduced motion, 7 a11y tests, 146 tests |
 | 19 | 29 Oct 2026 | Answer cache (`app/cache.py`, `VADA_CACHE_SIZE`, mtime invalidation), benchmark (`app/benchmark.py`), cache counters, 14 cache/benchmark tests, 160 tests |
+| 20 | 29 Oct 2026 | v1.0.0: version bump, `CHANGELOG.md`, README badges and 1.0 summary, tag `v1.0.0` |

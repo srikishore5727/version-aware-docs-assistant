@@ -1,5 +1,8 @@
 # Version-Aware Docs Assistant
 
+[![CI](https://github.com/srikishore5727/version-aware-docs-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/srikishore5727/version-aware-docs-assistant/actions/workflows/ci.yml)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB.svg)](https://www.python.org/downloads/)
+
 Ask a question about a product's API and get a short answer grounded in the exact document and version it came from.
 
 ## Problem
@@ -8,13 +11,25 @@ A software vendor maintains API references, migration guides, and changelogs acr
 
 ## Status
 
-**Sprint 2 · Day 19 of 20 — complete.**
+**v1.0.0 — released 29 October 2026.**
 
-Scaffold, corpus, chunking, hybrid retrieval, grounded answers with validated
-citations, the answer UI, filters, superseded handling, a relevance floor, a
-CI-gated golden set, a confidence panel, logs and metrics, feedback, an index
-freshness check, accessible light/dark themes, and an answer cache with a
-benchmark are working. The v1.0.0 release is next.
+All 20 days are complete. The app answers version-specific questions from the
+sample corpus, refuses to answer when the docs cannot support a claim, and
+shows the exact page behind every citation.
+
+## What's in 1.0
+
+- Hybrid retrieval (BM25 + Gemini embeddings, fused by RRF) over 12 docs and
+  60 chunks in v1, v2, and v3.
+- Grounded answers with code-validated citations; an uncited draft is withheld
+  and the response becomes `not_found`.
+- Source cards with version, status, section, last-updated date, excerpt, and a
+  link to the exact page.
+- Version and document-type filters, a superseded-document notice, a measured
+  relevance floor, and a computed confidence row.
+- A 30-question golden set (recall@5 1.00, MRR 0.91) that fails CI below 0.85.
+- JSON request logs, `/api/metrics`, feedback capture, index freshness, dark
+  mode, and a bounded answer cache with a benchmark.
 
 ## Quick start
 
@@ -327,10 +342,11 @@ tokens - no build step.
 | 17 | Index refresh job | Done |
 | 18 | Accessibility and dark mode | Done |
 | 19 | Performance tuning | Done |
-| 20 | v1.0.0 release | Next |
+| 20 | v1.0.0 release | Done |
 
 ## Documentation
 
+- [Changelog](CHANGELOG.md) - release history
 - [Product requirements](docs/PRD.md)
 - [RAG architecture](docs/RAG_ARCHITECTURE.md) - pipeline, prompt contract, failure behaviour
 - [Project memory](PROJECT_MEMORY.md) - read this before continuing the build
