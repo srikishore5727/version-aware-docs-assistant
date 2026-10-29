@@ -8,12 +8,12 @@ A software vendor maintains API references, migration guides, and changelogs acr
 
 ## Status
 
-**Sprint 2 · Day 14 of 20 — complete.**
+**Sprint 2 · Day 15 of 20 — complete.**
 
 Scaffold, corpus, chunking, hybrid retrieval, grounded answers with validated
 citations, the answer UI, filters, superseded handling, a relevance floor, a
-CI-gated golden set, and a computed confidence panel are working. Logging and
-metrics are next.
+CI-gated golden set, a confidence panel, and structured logs plus metrics are
+working. Feedback capture is next.
 
 ## Quick start
 
@@ -186,6 +186,23 @@ Behaviour:
 - Without an API key the endpoint returns a verbatim quote from the top chunk
   plus `[1]`, with `"model": "extractive"`.
 
+## Metrics
+
+Every `/api/*` call is timed and logged as one JSON line on stderr:
+
+```json
+{"duration_ms": 41.2, "endpoint": "/api/ask", "event": "request", "method": "POST", "status": 200}
+```
+
+`GET /api/metrics` returns per-process counters:
+
+```json
+{"requests": 12, "answered": 9, "not_found": 3, "errors": 0, "avg_ms": 38.4, "max_ms": 210.9, "slowest_endpoint": "/api/ask"}
+```
+
+Static assets and `/health` are not counted. Counters are per process, so a
+multi-worker deployment needs a real metrics backend.
+
 ## Interface
 
 Open <http://127.0.0.1:8000/> for the app. It is plain HTML, CSS, and one
@@ -234,8 +251,8 @@ tokens - no build step.
 | 12 | Golden-set evaluation harness | Done |
 | 13 | Evaluation in CI | Done |
 | 14 | Confidence and explanation panel | Done |
-| 15 | Logging and metrics | Next |
-| 16 | Answer feedback capture | Planned |
+| 15 | Logging and metrics | Done |
+| 16 | Answer feedback capture | Next |
 | 17 | Index refresh job | Planned |
 | 18 | Accessibility and dark mode | Planned |
 | 19 | Performance tuning | Planned |

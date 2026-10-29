@@ -10,10 +10,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from pathlib import Path
+import time
 
 from app import __version__
 from app.answer import generate_answer
 from app.config import get_settings
+from app.observability import log_request, metrics
 from app.retriever import (
     ensure_ready,
     hybrid_search,
@@ -67,6 +69,28 @@ def health() -> dict:
     return {"status": "ok", "service": "vada", "version": __version__}
 
 
+@app.middleware("http")
+async def observe_api_requests(request, call_next):
+    """Time API calls, log one JSON line each, and feed the counters."""
+    path = request.url.path
+    if not path.startswith("/api"):
+        return await call_next(request)
+
+    started = time.perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception:
+        elapsed = (time.perf_counter() - started) * 1000
+        metrics.record_request(path, 500, elapsed)
+        log_request(path, 500, elapsed, method=request.method)
+        raise
+
+    elapsed = (time.perf_counter() - started) * 1000
+    metrics.record_request(path, response.status_code, elapsed)
+    log_request(path, response.status_code, elapsed, method=request.method)
+    return response
+
+
 @app.get("/api", tags=["system"])
 def metadata() -> dict:
     """Service metadata and endpoint map. ``/`` serves the UI."""
@@ -78,7 +102,14 @@ def metadata() -> dict:
         "health": "/health",
         "search": "/api/search",
         "ask": "/api/ask",
+        "metrics": "/api/metrics",
     }
+
+
+@app.get("/api/metrics", tags=["system"])
+def metrics_snapshot() -> dict:
+    """Process-local request counters and latency figures."""
+    return metrics.snapshot()
 
 
 @app.post("/api/search", tags=["search"])
@@ -144,6 +175,7 @@ def ask(payload: AskRequest) -> dict:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     answer = generate_answer(payload.question, chunks, settings=settings)
+    metrics.record_outcome(answer.status)
 
     return {
         "question": payload.question,
