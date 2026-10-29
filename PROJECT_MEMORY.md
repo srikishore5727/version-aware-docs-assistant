@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 29 October 2026 - Day 12 complete
+**Last updated:** 29 October 2026 - Day 13 complete
 
 ---
 
@@ -115,8 +115,8 @@ Planned additions: `tests/golden_set.json`, `app/metrics.py`.
 | 10 | Superseded-document handling | **Done** |
 | 11 | Not-found and low-confidence path | **Done** |
 | 12 | Golden-set evaluation harness | **Done** |
-| 13 | Evaluation in CI | Next |
-| 14 | Confidence and explanation panel | Planned |
+| 13 | Evaluation in CI | **Done** |
+| 14 | Confidence and explanation panel | Next |
 | 15 | Logging and metrics | Planned |
 | 16 | Answer feedback capture | Planned |
 | 17 | Index refresh job | Planned |
@@ -217,9 +217,10 @@ pytest                          # run tests
   injected fakes, never the hashing numbers.
 - **Golden set** (`eval/golden_set.json`, `app/evaluate.py`): 30 questions over
   all 12 docs, scored retrieval-only. Baseline with real Gemini embeddings:
-  **recall@5 1.00, MRR 0.91**. CI-safe baseline with hashing embeddings is
-  asserted at recall@5 >= 0.85 by `tests/test_eval.py`.
-- **Known gap:** the eval harness is not yet a CI gate of its own (Day 13).
+  **recall@5 1.00, MRR 0.91**; hermetic hashing baseline **0.93**.
+- **CI gate**: `python -m app.evaluate --min-recall 0.85` runs after pytest,
+  exits `1` below target, and uploads `data/eval/report.json` as an artefact.
+- 110 tests pass locally. CI forces `VADA_EMBEDDINGS=hash` and a blank key.
 
 **APIs (stable - build on these next):**
 
@@ -240,22 +241,25 @@ answer.notice  # "" for current-only citations
 
 ---
 
-## 9. Next task - Day 13: evaluation in CI
+## 9. Next task - Day 14: confidence and explanation panel
 
-**Goal:** make recall a build failure, not a nice-to-have.
+**Goal:** show *why* an answer is trustworthy, not just that it exists.
 
 **Build**
 
-1. `app/evaluate.py`: `check_threshold(report, minimum)` raising `SystemExit`
-   or returning a bool; `python -m app.evaluate --min-recall 0.85` exits `1`
-   when the target is missed.
-2. `.github/workflows/ci.yml`: after pytest, run the harness with
-   `VADA_EMBEDDINGS=hash` and `GEMINI_API_KEY=""`, then upload
-   `data/eval/report.json` as an artefact.
-3. `tests/test_eval.py`: threshold helper passes at 0.85, fails below.
-4. README: badge/step note.
+1. `app/answer.py`: add `confidence: str` (`high` / `medium` / `low`) and
+   `reasons: list[str]` to `Answer` and `to_dict()`. Derive them in code:
+   - high: 2+ cited sources, all `current`, all within one version
+   - medium: one cited source, or mixed versions, or a superseded source
+   - low: extractive fallback, or a single weak match
+   Reasons are short human sentences, e.g. "2 sources agree", "cites superseded v2".
+2. `app/main.py`: nothing extra - it already spreads `answer.to_dict()`.
+3. UI: a compact confidence row under the answer head (dot + label + reasons,
+   `aria-live` friendly). Keep it quiet: no red alarm for `medium`.
+4. Tests: high/medium/low cases, payload fields, UI contains the container.
+5. Document the rules in `docs/RAG_ARCHITECTURE.md` §7.
 
-**Do not** add confidence scoring - that is Day 14.
+**Do not** add logging or metrics - that is Day 15.
 
 ---
 
@@ -300,3 +304,4 @@ answer.notice  # "" for current-only citations
 | 10 | 28 Oct 2026 | Superseded handling: RRF demotion penalty, `Answer.notice`, UI amber banner, superseded tests, 97 tests |
 | 11 | 29 Oct 2026 | Relevance floor (`MIN_SIMILARITY`, calibrated embeddings only), out-of-scope `not_found`, 6 threshold tests, 103 tests |
 | 12 | 29 Oct 2026 | Golden-set harness (`eval/golden_set.json`, `app/evaluate.py`), recall@5 1.00 / MRR 0.91 with Gemini, 6 eval tests, 109 tests |
+| 13 | 29 Oct 2026 | Evaluation gates CI (`--min-recall 0.85`, report artefact), threshold test, 110 tests |

@@ -27,6 +27,10 @@ DEFAULT_GOLDEN_SET = Path("eval/golden_set.json")
 DEFAULT_REPORT = Path("data/eval/report.json")
 DEFAULT_LIMIT = 5
 
+# CI fails below this. The real Gemini baseline is 1.00; the hashing baseline
+# used in CI is lower, so leave a margin rather than pinning the exact number.
+MIN_RECALL_TARGET = 0.85
+
 Retriever = Callable[..., list[SearchResult]]
 
 
@@ -114,13 +118,37 @@ def write_report(report: dict, path: str | Path = DEFAULT_REPORT) -> Path:
     return target
 
 
+def check_threshold(report: dict, minimum: float = MIN_RECALL_TARGET) -> bool:
+    """True when retrieval clears the recall target."""
+    return float(report.get("recall", 0.0)) >= minimum
+
+
 def _main() -> None:  # pragma: no cover - CLI
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Score retrieval against the golden set.")
+    parser.add_argument(
+        "--min-recall",
+        type=float,
+        default=None,
+        help="exit 1 when recall is below this value (e.g. 0.85)",
+    )
+    args = parser.parse_args()
+
     report = evaluate()
-    print(f"cases: {report['cases']}  recall@{report['limit']}: {report['recall']:.2f}  mrr: {report['mrr']:.2f}")
+    print(
+        f"cases: {report['cases']}  recall@{report['limit']}: {report['recall']:.2f}  "
+        f"mrr: {report['mrr']:.2f}"
+    )
     for miss in report["misses"]:
         print(f"  MISS {miss['id']}: {miss['question']}")
         print(f"       expected {miss['expected']} got {miss['got']}")
     print(f"report: {write_report(report)}")
+
+    if args.min_recall is not None and not check_threshold(report, args.min_recall):
+        raise SystemExit(
+            f"FAIL: recall {report['recall']:.2f} is below the {args.min_recall:.2f} target"
+        )
 
 
 if __name__ == "__main__":  # pragma: no cover - CLI
