@@ -8,12 +8,13 @@ A software vendor maintains API references, migration guides, and changelogs acr
 
 ## Status
 
-**Sprint 2 · Day 17 of 20 — complete.**
+**Sprint 2 · Day 18 of 20 — complete.**
 
 Scaffold, corpus, chunking, hybrid retrieval, grounded answers with validated
 citations, the answer UI, filters, superseded handling, a relevance floor, a
-CI-gated golden set, a confidence panel, logs and metrics, feedback, and an
-index freshness check are working. Accessibility and dark mode are next.
+CI-gated golden set, a confidence panel, logs and metrics, feedback, an index
+freshness check, and accessible light/dark themes are working. Performance
+tuning is next.
 
 ## Quick start
 
@@ -268,6 +269,23 @@ tokens - no build step.
 - The JSON service map moved to `/api`; `/health`, `/docs`, and `/api/*` are
   unchanged.
 
+## Accessibility
+
+- The skip link is the first tab stop and jumps to a focusable results region.
+- The status line is a polite live region, so a screen reader hears
+  "4 sources for ..." without being read every card.
+- Focus moves to the answer after a response (or to the results region when
+  there is no answer panel), so keyboard users land on the result.
+- Every control has a label, every citation says "Jump to source 2", and the
+  example chips are a labelled group.
+- Visible `:focus-visible` rings on inputs, selects, buttons, chips, citations,
+  and footer links.
+- Dark mode follows the system preference via `prefers-color-scheme`. There is
+  no toggle. All colours are tokens, and native controls are told
+  `color-scheme: light dark`.
+- `prefers-reduced-motion` disables the skeleton shimmer, hover lifts, and
+  smooth scrolling.
+
 ## 20-day plan
 
 | Day | Feature | Status |
@@ -289,8 +307,8 @@ tokens - no build step.
 | 15 | Logging and metrics | Done |
 | 16 | Answer feedback capture | Done |
 | 17 | Index refresh job | Done |
-| 18 | Accessibility and dark mode | Next |
-| 19 | Performance tuning | Planned |
+| 18 | Accessibility and dark mode | Done |
+| 19 | Performance tuning | Next |
 | 20 | v1.0.0 release | Planned |
 
 ## Documentation

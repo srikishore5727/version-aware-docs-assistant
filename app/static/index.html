@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>VADA - Every answer has a source</title>
 <meta name="description" content="Ask the Nimbus API documentation a question and see the exact versioned page behind every result.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M16 12 32 44 48 12' fill='none' stroke='%23151518' stroke-width='9.2' stroke-linecap='round' stroke-linejoin='round'/><circle cx='32' cy='54' r='3' fill='%234F46E5'/></svg>">
@@ -58,7 +59,7 @@
       <button type="submit" id="submit">Search</button>
     </form>
 
-    <div class="chips" id="chips" aria-label="Example questions">
+    <div class="chips" id="chips" role="group" aria-label="Example questions">
       <button type="button" class="chip" data-query="Which field replaced user_name in v3?">user_name in v3</button>
       <button type="button" class="chip" data-query="How long do access tokens last?">token expiry</button>
       <button type="button" class="chip" data-query="What is the biggest page size I can ask for?">page size</button>
@@ -66,11 +67,17 @@
     </div>
   </section>
 
-  <section id="results" class="results" aria-live="polite" aria-busy="false">
-    <p class="hint" id="hint">
+  <section
+    id="results"
+    class="results"
+    tabindex="-1"
+    aria-labelledby="results-heading"
+    aria-busy="false">
+    <h2 class="sr-only" id="results-heading">Search results</h2>
+    <p class="hint" id="hint" role="status" aria-live="polite">
       Search 60 chunks across 12 documents in v1, v2, and v3.
     </p>
-    <div id="answer" class="answer" hidden></div>
+    <div id="answer" class="answer" tabindex="-1" hidden></div>
     <div id="cards" class="cards"></div>
   </section>
 </main>

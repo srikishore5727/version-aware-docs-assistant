@@ -139,6 +139,16 @@
     hint.hidden = false;
   }
 
+  /* Move focus to the result after a response. The answer and results panel
+     carry tabindex="-1" so they are focusable without joining the tab order. */
+  function focusResult() {
+    if (answerBox.hidden) {
+      results.focus();
+    } else {
+      answerBox.focus();
+    }
+  }
+
   function reset() {
     hint.hidden = true;
     hint.textContent = "";
@@ -306,6 +316,7 @@
         data.confidence,
         data.reasons,
       );
+      focusResult();
       return;
     }
 
@@ -338,6 +349,7 @@
     );
     renderSources(sources);
     renderFeedback(query, data);
+    focusResult();
   }
 
   function renderLoading() {
@@ -361,6 +373,7 @@
       el("p", null, "Check that the API is running, then try again. Nothing was saved."),
     );
     cardBox.appendChild(empty);
+    focusResult();
   }
 
   /* If /api/ask is unavailable, fall back to plain retrieval so the page is
@@ -381,6 +394,7 @@
         "Answer unavailable - showing " + data.count + " matching documents" + scopeLabel(),
       );
       renderSources(data.results || []);
+      focusResult();
     } catch (error) {
       renderFailure();
     }
