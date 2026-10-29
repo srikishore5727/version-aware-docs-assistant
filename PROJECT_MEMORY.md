@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 29 October 2026 - Day 14 complete
+**Last updated:** 29 October 2026 - Day 15 complete
 
 ---
 
@@ -117,8 +117,8 @@ Planned additions: `tests/golden_set.json`, `app/metrics.py`.
 | 12 | Golden-set evaluation harness | **Done** |
 | 13 | Evaluation in CI | **Done** |
 | 14 | Confidence and explanation panel | **Done** |
-| 15 | Logging and metrics | Next |
-| 16 | Answer feedback capture | Planned |
+| 15 | Logging and metrics | **Done** |
+| 16 | Answer feedback capture | Next |
 | 17 | Index refresh job | Planned |
 | 18 | Accessibility and dark mode | Planned |
 | 19 | Performance tuning | Planned |
@@ -228,6 +228,11 @@ pytest                          # run tests
   not-found or extractive. Exposed in `to_dict()` and rendered as a quiet row
   under the answer head.
 - 117 tests pass locally. CI forces `VADA_EMBEDDINGS=hash` and a blank key.
+- **Observability** (`app/observability.py`): one JSON line per `/api/*` request
+  (`format_event()`), plus process-local counters exposed at `GET /api/metrics`
+  (`requests`, `answered`, `not_found`, `errors`, `avg_ms`, `max_ms`,
+  `slowest_endpoint`). `/health` and static files are not counted. Middleware
+  lives in `app/main.py`; counters reset in tests via `metrics.reset()`.
 
 **APIs (stable - build on these next):**
 
@@ -248,25 +253,24 @@ answer.notice  # "" for current-only citations
 
 ---
 
-## 9. Next task - Day 15: logging and metrics
+## 9. Next task - Day 16: answer feedback capture
 
-**Goal:** know what the service is doing in production without reading tracebacks.
+**Goal:** let a reader say "this was wrong" and keep the evidence.
 
 **Build**
 
-1. `app/observability.py`: configure one JSON logger (`vada`) writing to stderr;
-   `log_request(endpoint, status, ms, extra)` emits one line per API call.
-   In-process `Metrics` counter: `requests`, `answered`, `not_found`, `errors`,
-   `total_ms`, `max_ms`, `slowest_endpoint`.
-2. `app/main.py`: HTTP middleware timing `/api/*` requests (skip static), call
-   `log_request`, record metrics. Add `GET /api/metrics` returning a snapshot.
-3. Count answer outcomes in `/api/ask` (`answered` vs `not_found`) and
-   retrieval counts in `/api/search`.
-4. `tests/test_metrics.py`: counters increment, snapshot shape, slowest
-   endpoint, middleware skips `/health` or not (decide and test).
-5. `README.md`, `docs/RAG_ARCHITECTURE.md` - the endpoint and log format.
+1. `app/feedback.py` - SQLite table `feedback(id, created_at, question, verdict,
+   status, version, doc_type)`; `record()` and `summary()` (counts by verdict).
+2. `app/config.py` - `VADA_FEEDBACK_DB` (default `data/feedback.db`).
+3. `app/main.py` - `POST /api/feedback` body
+   `{"question", "verdict": "helpful" | "not_helpful", "status"?, "version"?, "doc_type"?}`;
+   `201` with the stored id, `422` for an unknown verdict.
+4. UI: two quiet buttons under the answer ("Helpful" / "Not quite"), one send,
+   then "Thanks - noted." Never block the page on the request.
+5. Tests: store round-trip, summary counts, endpoint validation, UI contains
+   the controls.
 
-**Do not** add feedback capture - that is Day 16.
+**Do not** build a dashboard - that is out of scope for v1.
 
 ---
 
@@ -313,3 +317,4 @@ answer.notice  # "" for current-only citations
 | 12 | 29 Oct 2026 | Golden-set harness (`eval/golden_set.json`, `app/evaluate.py`), recall@5 1.00 / MRR 0.91 with Gemini, 6 eval tests, 109 tests |
 | 13 | 29 Oct 2026 | Evaluation gates CI (`--min-recall 0.85`, report artefact), threshold test, 110 tests |
 | 14 | 29 Oct 2026 | Computed confidence + reasons on `Answer`, quiet UI row, 7 confidence tests, 117 tests |
+| 15 | 29 Oct 2026 | JSON request logs, `/api/metrics` counters and latency, 8 metrics tests, 125 tests |

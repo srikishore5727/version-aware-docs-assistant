@@ -159,6 +159,7 @@ cannot be hallucinated away.
 |---|---|---|
 | `POST /api/search` | Ranked chunks, no generation | Built |
 | `POST /api/ask` | Answer + citations + sources | Built |
+| `GET /api/metrics` | Process request counters and latency | Built |
 | `GET /health` | Liveness | Built |
 
 `POST /api/ask` request: `{"question": str, "version": str?, "doc_type": str?}`
