@@ -257,7 +257,7 @@ pytest                          # run tests
   golden questions twice with a stubbed citation, so no model call. Latest:
   cold p50 ~1.17 s (Gemini embeddings), warm p50 ~0 ms, 30/60 hits by design.
   Live second ask: 5.66 s -> 98 ms.
-- 175 tests pass locally (160 at release; `tests/test_brand.py` adds 12 and the
+- 175 tests pass locally (164 at release; `tests/test_brand.py` adds 11 and the
   dark-token assertion moved to `--surface`).
 
 **Brand tokens (post-release fix, Day 21):**
@@ -370,4 +370,4 @@ Keep `PROJECT_MEMORY.md` current if the project is handed on.
 | 18 | 29 Oct 2026 | Accessibility and dark mode: skip link, live status, focus management, focus rings, `prefers-color-scheme` token block, reduced motion, 7 a11y tests, 146 tests |
 | 19 | 29 Oct 2026 | Answer cache (`app/cache.py`, `VADA_CACHE_SIZE`, mtime invalidation), benchmark (`app/benchmark.py`), cache counters, 14 cache/benchmark tests, 160 tests |
 | 20 | 29 Oct 2026 | v1.0.0: version bump, `CHANGELOG.md`, README badges and 1.0 summary, tag `v1.0.0` |
-| 21 | 30 Oct 2026 | Post-release brand fix: `app.css` rebuilt on 51 brand tokens (palette, radii, shadows, type, easing), off-palette colours and `outline: none` removed, amber reserved for the miss panel, dark-mode `--surface` bug fixed, `tests/test_brand.py` (12 tests), README brand section, 175 tests |
+| 21 | 30 Oct 2026 | Post-release brand fix: `app.css` rebuilt on 51 brand tokens (palette, radii, shadows, type, easing), off-palette colours and `outline: none` removed, amber reserved for the miss panel, dark-mode `--surface` bug fixed, `tests/test_brand.py` (11 tests), README brand section, 175 tests |
