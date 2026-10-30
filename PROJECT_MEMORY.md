@@ -3,7 +3,7 @@
 > Read this file first. It is the handoff document for any model or developer
 > continuing this project. Keep it updated at the end of every working day.
 
-**Last updated:** 29 October 2026 - v1.0.0 released
+**Last updated:** 30 October 2026 - brand-token fix after release
 
 ---
 
@@ -257,7 +257,28 @@ pytest                          # run tests
   golden questions twice with a stubbed citation, so no model call. Latest:
   cold p50 ~1.17 s (Gemini embeddings), warm p50 ~0 ms, 30/60 hits by design.
   Live second ask: 5.66 s -> 98 ms.
-- 160 tests pass locally.
+- 175 tests pass locally (160 at release; `tests/test_brand.py` adds 12 and the
+  dark-token assertion moved to `--surface`).
+
+**Brand tokens (post-release fix, Day 21):**
+
+- `app/static/app.css` opens with one token block copied from
+  `mockups/brand-guidelines.html` (core palette, `--accent`/`--accent-2`,
+  `--r-sm..--r-xl`, `--shadow-sm`/`--shadow`, `--font`/`--mono`, `--ease`) plus
+  the supporting tints and component radii `mockups/design-system.html` uses
+  (`--accent-line #dde4ff`, `--accent-line-strong #c7d2fe`, `--ok-line #a7f3d0`,
+  `--warn-line #fde68a`, `--notice-ink #92400e`, `--hover-line #d4d4d8`,
+  `--code-bg #f4f4f5`, `--code-line #e4e4e7`, `--r-card 18px`,
+  `--r-source 14px`, `--r-tag 6px`, `--r-cite 5px`).
+- 51 tokens total. Every component rule reads tokens: no raw hex, `rgba()`,
+  radius, shadow or duration below the token blocks.
+- Brand rules now enforced in CSS: indigo = action/citation (primary button is
+  `--accent`, hovers to `--accent-2`); amber only on the not-found panel and
+  data-quality notices (`.answer--miss`, superseded notice); 2 px indigo focus
+  rings everywhere; 15 px / 1.6 body type; 120 ms / 180 ms motion on
+  `--ease`; `--surface` replaces the old `--card` so dark mode and chips work.
+- `tests/test_brand.py` parses both mockup files and fails on drift. It is the
+  guardrail: change the mockups first, then the tokens.
 - **Release**: `app/__init__.py` is `1.0.0`, `CHANGELOG.md` records the full
   feature set, and the README carries CI/Python badges plus a 20/20 plan table.
 
@@ -282,8 +303,10 @@ answer.notice  # "" for current-only citations
 
 ## 9. After 1.0 - maintenance notes
 
-There is no Day 21 in the plan. If this project continues, the natural next
-steps are:
+There is no Day 21 in the plan, but one post-release fix shipped on 30 Oct:
+the UI had drifted from the brand files, so `app/static/app.css` was rebuilt on
+a token layer and `tests/test_brand.py` now guards it (Day 21 row below). If
+this project continues, the natural next steps are:
 
 1. Replace the 12-document sample corpus with a real docs pipeline (the ingest
    and citation contract stay the same).
@@ -347,3 +370,4 @@ Keep `PROJECT_MEMORY.md` current if the project is handed on.
 | 18 | 29 Oct 2026 | Accessibility and dark mode: skip link, live status, focus management, focus rings, `prefers-color-scheme` token block, reduced motion, 7 a11y tests, 146 tests |
 | 19 | 29 Oct 2026 | Answer cache (`app/cache.py`, `VADA_CACHE_SIZE`, mtime invalidation), benchmark (`app/benchmark.py`), cache counters, 14 cache/benchmark tests, 160 tests |
 | 20 | 29 Oct 2026 | v1.0.0: version bump, `CHANGELOG.md`, README badges and 1.0 summary, tag `v1.0.0` |
+| 21 | 30 Oct 2026 | Post-release brand fix: `app.css` rebuilt on 51 brand tokens (palette, radii, shadows, type, easing), off-palette colours and `outline: none` removed, amber reserved for the miss panel, dark-mode `--surface` bug fixed, `tests/test_brand.py` (12 tests), README brand section, 175 tests |

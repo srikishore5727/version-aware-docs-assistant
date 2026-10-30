@@ -52,7 +52,7 @@ def test_the_dark_theme_redefines_surfaces_and_ink() -> None:
 
     assert "--paper: #101014" in dark
     assert "--ink: #f4f4f5" in dark
-    assert "--card: #18181d" in dark
+    assert "--surface: #18181d" in dark
     assert "--btn-bg: #e4e4e7" in dark
 
 
