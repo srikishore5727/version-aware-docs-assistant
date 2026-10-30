@@ -319,6 +319,39 @@ tokens - no build step.
 - `prefers-reduced-motion` disables the skeleton shimmer, hover lifts, and
   smooth scrolling.
 
+## Brand and design tokens
+
+`app/static/app.css` opens with one token block. The palette, radii, elevation,
+type stacks and easing are copied from `mockups/brand-guidelines.html`; the
+component radii and supporting tints are the ones `mockups/design-system.html`
+already uses. Everything below that block reads tokens only, so there is no raw
+colour, radius, shadow or duration in a component rule.
+
+| Group | Tokens |
+|---|---|
+| Core | `--ink` `--ink-2` `--muted` `--faint` `--line` `--line-2` `--paper` `--white` |
+| Accent | `--accent` `--accent-2` `--accent-300` `--accent-ink` `--accent-soft` |
+| Semantic | `--ok` `--ok-soft` `--warn` `--warn-soft` `--danger` |
+| Radii | `--r-sm` `--r-md` `--r-lg` `--r-xl` `--r-full`, plus `--r-card` `--r-source` `--r-tag` `--r-cite` |
+| Elevation | `--shadow-sm` `--shadow` |
+| Type | `--font` `--mono` |
+| Motion | `--ease` (cubic-bezier .2 .7 .3 1), `--t-fast` 120 ms, `--t-mid` 180 ms |
+
+Rules the stylesheet follows, taken from the brand document:
+
+- Indigo means interactive or cited. The primary button is indigo 600 and hovers
+  to indigo 700; citations use indigo 100 with indigo 700 text.
+- Amber is reserved for the not-found state and data-quality notices. That is why
+  the miss panel and the superseded warning share `--warn-soft`.
+- Focus is a 2 px indigo ring with 2 px offset. No component removes it.
+- Body text is 15 px / 1.6, headings tighten as they grow, and code is always
+  monospace.
+- Motion is 120 ms for colour and focus, 180 ms for cards, nothing overshoots.
+
+`tests/test_brand.py` parses both mockup files and fails if a brand token is
+missing, a value drifts, a component introduces a raw colour, a `var()` is
+undefined, or the dark theme stops using the brand hues.
+
 ## 20-day plan
 
 | Day | Feature | Status |
