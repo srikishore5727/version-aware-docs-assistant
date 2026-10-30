@@ -29,7 +29,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
-- `tests/test_brand.py`: 12 tests that parse both mockup files and fail on
+- `tests/test_brand.py`: 11 tests that parse both mockup files and fail on
   missing tokens, drifted values, raw colours outside the token block,
   undefined `var()` references, off-palette legacy colours, or a dark theme that
   stops using the brand hues.
