@@ -257,8 +257,8 @@ pytest                          # run tests
   golden questions twice with a stubbed citation, so no model call. Latest:
   cold p50 ~1.17 s (Gemini embeddings), warm p50 ~0 ms, 30/60 hits by design.
   Live second ask: 5.66 s -> 98 ms.
-- 175 tests pass locally (164 at release; `tests/test_brand.py` adds 11 and the
-  dark-token assertion moved to `--surface`).
+- 186 tests pass locally (175 after the brand fix; `tests/test_theme.py` adds
+  10 and `tests/test_brand.py` gains a dark-path equality test).
 
 **Brand tokens (post-release fix, Day 21):**
 
@@ -279,6 +279,24 @@ pytest                          # run tests
   `--ease`; `--surface` replaces the old `--card` so dark mode and chips work.
 - `tests/test_brand.py` parses both mockup files and fails on drift. It is the
   guardrail: change the mockups first, then the tokens.
+
+**Theme switch (same post-release batch):**
+
+- `app/static/index.html` runs a small head script that resolves the theme
+  before the stylesheet loads: `localStorage["vada-theme"]` wins, otherwise
+  `prefers-color-scheme`. It writes `data-theme` on `<html>`, so there is no
+  flash of the wrong theme.
+- `app/static/app.js` owns the rest: the header `.theme-toggle` button flips
+  light/dark, stores the choice, updates `aria-pressed` and the
+  "Switch to ... theme" label, and follows the OS only while no choice is
+  stored.
+- Dark tokens live in two places by necessity: the
+  `@media (prefers-color-scheme: dark) :root:not([data-theme="light"])` block
+  (system path) and `:root[data-theme="dark"]` (toggle path). A brand test
+  asserts the two blocks are identical, so edit both together.
+- Native `<option>`s carry `background: var(--surface)` and `color: var(--ink)`.
+  Without them the OS-drawn popup renders page ink on a white sheet, which is
+  the dark-mode bug reported after release.
 - **Release**: `app/__init__.py` is `1.0.0`, `CHANGELOG.md` records the full
   feature set, and the README carries CI/Python badges plus a 20/20 plan table.
 
@@ -371,3 +389,4 @@ Keep `PROJECT_MEMORY.md` current if the project is handed on.
 | 19 | 29 Oct 2026 | Answer cache (`app/cache.py`, `VADA_CACHE_SIZE`, mtime invalidation), benchmark (`app/benchmark.py`), cache counters, 14 cache/benchmark tests, 160 tests |
 | 20 | 29 Oct 2026 | v1.0.0: version bump, `CHANGELOG.md`, README badges and 1.0 summary, tag `v1.0.0` |
 | 21 | 30 Oct 2026 | Post-release brand fix: `app.css` rebuilt on 51 brand tokens (palette, radii, shadows, type, easing), off-palette colours and `outline: none` removed, amber reserved for the miss panel, dark-mode `--surface` bug fixed, `tests/test_brand.py` (11 tests), README brand section, 175 tests |
+| 22 | 31 Oct 2026 | Theme control: sun/moon toggle with stored choice and pre-paint `data-theme` bootstrap, dual dark paths (`prefers-color-scheme` + `[data-theme="dark"]`), readable dropdown options in dark mode, `tests/test_theme.py` (10 tests), 186 tests |

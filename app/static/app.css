@@ -81,10 +81,17 @@
   --glow: rgba(99, 102, 241, 0.1);
 }
 
-/* Same brand, lower light. Only the surfaces and inks move; the accent keeps
-   its hue. Every colour below is a token so no component needs a dark variant. */
+/* Same brand, lower light. Only the surfaces and inks move; the accent
+   keeps its hue. Every colour below is a token, so no component needs a
+   dark variant.
+
+   Two paths lead here: the system preference, used while the reader has
+   not chosen a theme, and an explicit `data-theme="dark"` from the toggle.
+   The declarations repeat because plain CSS cannot share one block across
+   a media query and an attribute selector; tests/test_brand.py fails if
+   the two copies ever differ. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     color-scheme: dark;
     --ink: #f4f4f5;
     --ink-2: #d4d4d8;
@@ -125,6 +132,48 @@
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 18px 40px -22px rgba(0, 0, 0, 0.8);
   }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #f4f4f5;
+  --ink-2: #d4d4d8;
+  --muted: #a1a1aa;
+  --faint: #8b8b95;
+  --line: #2e2e35;
+  --line-2: #23232a;
+  --paper: #101014;
+  --surface: #18181d;
+
+  /* Indigo 300 and 200 carry the accent at night; the hue is unchanged. */
+  --accent: #a5b4fc;
+  --accent-2: #c7d2fe;
+  --accent-300: #4f46e5;
+  --accent-ink: #c7d2fe;
+  --accent-soft: #232338;
+
+  --ok: #6ee7b7;
+  --ok-soft: #0f2b21;
+  --warn: #fcd34d;
+  --warn-soft: #2e2410;
+  --danger: #fca5a5;
+
+  --accent-line: #4f46e5;
+  --accent-line-strong: #4f46e5;
+  --ok-line: #14532d;
+  --warn-line: #4a3a12;
+  --notice-ink: #fcd34d;
+  --hover-line: #3f3f46;
+  --code-bg: #26262c;
+  --code-line: #3f3f46;
+
+  --on-accent: #18181b;
+  --btn-bg: #e4e4e7;
+  --btn-ink: #18181b;
+  --cta-shadow: none;
+  --glow: rgba(129, 140, 248, 0.14);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 18px 40px -22px rgba(0, 0, 0, 0.8);
 }
 
 * {
@@ -235,6 +284,65 @@ a {
   padding: 5px 12px;
 }
 
+.masthead__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.theme-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease),
+    background var(--t-fast) var(--ease);
+}
+
+.theme-toggle:hover {
+  border-color: var(--hover-line);
+  background: var(--line-2);
+  color: var(--ink);
+}
+
+.theme-toggle__icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+/* The icon shows the theme the button switches to: a moon on a light page,
+   a sun on a dark one. */
+.theme-toggle__icon--sun {
+  display: none;
+}
+
+:root[data-theme="dark"] .theme-toggle__icon--sun {
+  display: block;
+}
+
+:root[data-theme="dark"] .theme-toggle__icon--moon {
+  display: none;
+}
+
+/* Without JavaScript the toggle is inert, so the icon still has to follow the
+   system preference. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-toggle__icon--sun {
+    display: block;
+  }
+
+  :root:not([data-theme="light"]) .theme-toggle__icon--moon {
+    display: none;
+  }
+}
+
 /* --- hero -------------------------------------------------------------- */
 
 .wrap {
@@ -322,6 +430,13 @@ h1 em {
   cursor: pointer;
 }
 
+/* The popup is drawn by the OS. Without an explicit background and ink it can
+   inherit the page ink onto the OS's white sheet - invisible in dark mode. */
+.search select option {
+  background: var(--surface);
+  color: var(--ink);
+}
+
 .search select:focus {
   outline: none;
   color: var(--ink);
@@ -361,6 +476,7 @@ h1 em {
 .chip:focus-visible,
 .card__link:focus-visible,
 .feedback__btn:focus-visible,
+.theme-toggle:focus-visible,
 .foot a:focus-visible,
 .skip:focus-visible {
   outline: 2px solid var(--accent);

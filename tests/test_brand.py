@@ -72,8 +72,16 @@ def light_tokens() -> dict[str, str]:
 
 
 def dark_tokens() -> dict[str, str]:
+    """The system-preference dark block."""
     dark = css().split("@media (prefers-color-scheme: dark)", 1)[1]
-    block = re.search(r":root \{(.*?)\n  \}", dark, re.S)
+    block = re.search(r':root:not\(\[data-theme="light"\]\) \{(.*?)\n  \}', dark, re.S)
+    assert block is not None
+    return _parse(block.group(1))
+
+
+def theme_dark_tokens() -> dict[str, str]:
+    """The explicit `data-theme="dark"` block written by the toggle."""
+    block = re.search(r':root\[data-theme="dark"\] \{(.*?)\n\}', css(), re.S)
     assert block is not None
     return _parse(block.group(1))
 
@@ -112,8 +120,7 @@ def test_component_radii_match_the_design_system() -> None:
 
 def test_no_raw_colour_outside_the_token_blocks() -> None:
     stylesheet = css()
-    after_tokens = stylesheet.split("@media (prefers-color-scheme: dark)", 1)[1]
-    body = after_tokens.split("\n}\n", 1)[1]
+    body = stylesheet.split("\n* {", 1)[1]
 
     offenders = [
         line.strip()
@@ -125,10 +132,15 @@ def test_no_raw_colour_outside_the_token_blocks() -> None:
 
 def test_every_var_reference_is_defined() -> None:
     stylesheet = css()
-    defined = set(light_tokens()) | set(dark_tokens())
+    defined = set(light_tokens()) | set(dark_tokens()) | set(theme_dark_tokens())
     used = set(re.findall(r"var\((--[\w-]+)\)", stylesheet))
 
     assert sorted(used - defined) == []
+
+
+def test_both_dark_paths_define_the_same_tokens() -> None:
+    """The system block and the toggle block must never drift apart."""
+    assert dark_tokens() == theme_dark_tokens()
 
 
 def test_the_brand_type_stacks_are_used() -> None:
