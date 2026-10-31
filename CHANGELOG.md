@@ -9,6 +9,11 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Fixed
 
+- Dark-mode dropdowns were unreadable: native `<option>`s inherited light page
+  ink on the OS's white popup sheet. Options now set `background: var(--surface)`
+  and `color: var(--ink)`, and the page tells native controls the theme through
+  `color-scheme`, so the version and document-type menus are legible in both
+  themes.
 - The UI stylesheet now matches `mockups/brand-guidelines.html` and
   `mockups/design-system.html` exactly: missing `--accent-2`, `--faint`,
   `--line-2`, `--r-sm`/`--r-md`/`--r-lg`/`--r-xl`, `--shadow-sm` and `--ease`
@@ -29,6 +34,14 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
+- A sun/moon theme toggle in the header. The page follows the system preference
+  until the reader picks a theme; the choice is stored in `localStorage`, applied
+  as `data-theme` before first paint (no flash), and keeps winning if the OS
+  preference later changes. `aria-pressed` and the button label follow the state.
+- `tests/test_theme.py`: 10 tests covering the pre-paint bootstrap, the labelled
+  button and its icons, both dark paths, the focus ring, WCAG AA contrast for
+  body text and dropdown options in both themes, and the storage/system-change
+  wiring.
 - `tests/test_brand.py`: 11 tests that parse both mockup files and fail on
   missing tokens, drifted values, raw colours outside the token block,
   undefined `var()` references, off-palette legacy colours, or a dark theme that

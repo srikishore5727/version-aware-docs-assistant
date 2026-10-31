@@ -438,4 +438,54 @@
     search(input.value);
     input.focus();
   });
+
+  /* --- theme ------------------------------------------------------------
+     The head script resolves the theme before first paint. Here we keep the
+     button in sync, persist an explicit choice, and follow the system while
+     no choice has been made. */
+  var THEME_KEY = "vada-theme";
+  var themeToggle = document.getElementById("theme-toggle");
+  var darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+  function storedTheme() {
+    try {
+      var value = window.localStorage.getItem(THEME_KEY);
+      return value === "light" || value === "dark" ? value : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function systemTheme() {
+    return darkQuery.matches ? "dark" : "light";
+  }
+
+  function applyTheme(theme) {
+    var dark = theme === "dark";
+    document.documentElement.setAttribute("data-theme", theme);
+    themeToggle.setAttribute("aria-pressed", dark ? "true" : "false");
+    var label = dark ? "Switch to light theme" : "Switch to dark theme";
+    themeToggle.setAttribute("aria-label", label);
+    themeToggle.setAttribute("title", label);
+  }
+
+  function currentTheme() {
+    return storedTheme() || systemTheme();
+  }
+
+  applyTheme(currentTheme());
+
+  themeToggle.addEventListener("click", function () {
+    var next = currentTheme() === "dark" ? "light" : "dark";
+    try {
+      window.localStorage.setItem(THEME_KEY, next);
+    } catch (error) {
+      /* Private mode with storage blocked: the choice still applies now. */
+    }
+    applyTheme(next);
+  });
+
+  darkQuery.addEventListener("change", function () {
+    if (!storedTheme()) applyTheme(systemTheme());
+  });
 })();

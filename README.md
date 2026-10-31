@@ -279,6 +279,8 @@ JavaScript file served from `app/static/`, styled with the approved brand
 tokens - no build step.
 
 - One question box, example chips, an answer panel, then the source cards.
+- A sun/moon theme toggle in the header switches light and dark and remembers
+  the choice.
 - A version selector scopes both retrieval and the answer to v1, v2, or v3.
 - A document-type selector narrows results to API reference, migration guide,
   or changelog. Both filters can be combined.
@@ -313,9 +315,17 @@ tokens - no build step.
   example chips are a labelled group.
 - Visible `:focus-visible` rings on inputs, selects, buttons, chips, citations,
   and footer links.
-- Dark mode follows the system preference via `prefers-color-scheme`. There is
-  no toggle. All colours are tokens, and native controls are told
-  `color-scheme: light dark`.
+- A sun/moon theme toggle sits in the header. The page follows the system
+  preference until the reader chooses light or dark; that choice is stored in
+  `localStorage` and applied as `data-theme` on `<html>` before first paint, so
+  there is no flash. A stored choice keeps winning if the OS preference changes.
+  The icon always shows the theme the button switches to, and `aria-pressed`
+  reports whether dark is on.
+- Dark mode is implemented twice on purpose: `prefers-color-scheme` (no stored
+  choice) and `[data-theme="dark"]` (explicit choice). `tests/test_brand.py`
+  fails if the two token blocks drift apart.
+- Native `<option>`s get explicit `background` and `color`, because the popup is
+  drawn by the OS and otherwise inherits dark page ink onto a white sheet.
 - `prefers-reduced-motion` disables the skeleton shimmer, hover lifts, and
   smooth scrolling.
 
