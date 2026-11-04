@@ -7,6 +7,31 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+### Added
+
+- A sun/moon theme toggle in the header. The page follows the system preference
+  until the reader picks a theme; the choice is stored in `localStorage`, applied
+  as `data-theme` before first paint (no flash), and keeps winning if the OS
+  preference later changes. `aria-pressed` and the button label follow the state.
+- `tests/test_theme.py`: 10 tests covering the pre-paint bootstrap, the labelled
+  button and its icons, both dark paths, the focus ring, WCAG AA contrast for
+  body text and dropdown options in both themes, and the storage/system-change
+  wiring.
+- `tests/test_brand.py`: 11 tests that parse both mockup files and fail on
+  missing tokens, drifted values, raw colours outside the token block,
+  undefined `var()` references, off-palette legacy colours, or a dark theme that
+  stops using the brand hues.
+- README section `Brand and design tokens` documenting the token groups and the
+  rules the stylesheet follows.
+
+### Changed
+
+- The default generation model moved from `gemini-3.1-flash-lite-preview` to the
+  generally available `gemini-3.1-flash-lite`. The preview endpoint was returning
+  `503 UNAVAILABLE` ("high demand") and taking 16-25 s per call; the GA model
+  answers the same questions in 1-4 s with the same citation quality. Retrieval,
+  eval scores and the golden set are unchanged (they do not call the model).
+
 ### Fixed
 
 - Dark-mode dropdowns were unreadable: native `<option>`s inherited light page
@@ -31,23 +56,6 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   so amber appears only on misses and data-quality notices.
 - Dark mode keeps the brand hues (indigo 300 as the night accent) and exposes
   `--surface`, which also fixes washed-out chips against dark backgrounds.
-
-### Added
-
-- A sun/moon theme toggle in the header. The page follows the system preference
-  until the reader picks a theme; the choice is stored in `localStorage`, applied
-  as `data-theme` before first paint (no flash), and keeps winning if the OS
-  preference later changes. `aria-pressed` and the button label follow the state.
-- `tests/test_theme.py`: 10 tests covering the pre-paint bootstrap, the labelled
-  button and its icons, both dark paths, the focus ring, WCAG AA contrast for
-  body text and dropdown options in both themes, and the storage/system-change
-  wiring.
-- `tests/test_brand.py`: 11 tests that parse both mockup files and fail on
-  missing tokens, drifted values, raw colours outside the token block,
-  undefined `var()` references, off-palette legacy colours, or a dark theme that
-  stops using the brand hues.
-- README section `Brand and design tokens` documenting the token groups and the
-  rules the stylesheet follows.
 
 ## [1.0.0] - 2026-10-29
 

@@ -187,7 +187,7 @@ curl -X POST http://127.0.0.1:8000/api/ask ^
       "source_url": "https://docs.nimbus.example/v3/users/create"
     }
   ],
-  "model": "gemini-3.1-flash-lite-preview",
+  "model": "gemini-3.1-flash-lite",
   "reason": "",
   "mode": "hybrid"
 }
