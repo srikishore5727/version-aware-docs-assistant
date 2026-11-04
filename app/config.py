@@ -61,7 +61,7 @@ def get_settings() -> Settings:
     return Settings(
         gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip(),
         embedding_model=os.getenv("VADA_EMBEDDING_MODEL", "gemini-embedding-001"),
-        llm_model=os.getenv("VADA_LLM_MODEL", "gemini-3.1-flash-lite-preview"),
+        llm_model=os.getenv("VADA_LLM_MODEL", "gemini-3.1-flash-lite"),
         embeddings_mode=mode,
         corpus_dir=Path(os.getenv("VADA_CORPUS_DIR", "corpus")),
         db_path=Path(os.getenv("VADA_DB_PATH", "data/index/vada.db")),

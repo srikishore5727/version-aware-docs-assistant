@@ -210,7 +210,7 @@ pytest                          # run tests
   - only applied when `embedder.calibrated` is true (`GeminiEmbeddings` yes,
     `HashingEmbeddings` no); a vector failure skips the gate
 - Config from env + `.env`: `GEMINI_API_KEY`, `VADA_EMBEDDING_MODEL`
-  (`gemini-embedding-001`), `VADA_LLM_MODEL` (`gemini-3.1-flash-lite-preview`),
+  (`gemini-embedding-001`), `VADA_LLM_MODEL` (`gemini-3.1-flash-lite`),
   `VADA_EMBEDDINGS` (`gemini` / `hash` / `off`).
 - 103 tests pass locally (6 more threshold tests). CI forces
   `VADA_EMBEDDINGS=hash` and a blank key, so the floor is exercised through
