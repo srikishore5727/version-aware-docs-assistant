@@ -393,6 +393,7 @@ undefined, or the dark theme stops using the brand hues.
 - [Product requirements](docs/PRD.md)
 - [RAG architecture](docs/RAG_ARCHITECTURE.md) - pipeline, prompt contract, failure behaviour
 - [Project memory](PROJECT_MEMORY.md) - read this before continuing the build
+- [Programme review brief](docs/demo-brief.html) - the product, the build, and the demo script on one page
 - [UX mockup](https://srikishore5727.github.io/version-aware-docs-assistant/ux-mockup.html)
 - [Brand guidelines](https://srikishore5727.github.io/version-aware-docs-assistant/brand-guidelines.html)
 - [Design system](https://srikishore5727.github.io/version-aware-docs-assistant/design-system.html)

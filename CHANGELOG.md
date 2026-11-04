@@ -17,12 +17,17 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   button and its icons, both dark paths, the focus ring, WCAG AA contrast for
   body text and dropdown options in both themes, and the storage/system-change
   wiring.
-- `tests/test_brand.py`: 11 tests that parse both mockup files and fail on
+- `tests/test_brand.py`: 12 tests that parse both mockup files and fail on
   missing tokens, drifted values, raw colours outside the token block,
   undefined `var()` references, off-palette legacy colours, or a dark theme that
   stops using the brand hues.
 - README section `Brand and design tokens` documenting the token groups and the
   rules the stylesheet follows.
+- `docs/demo-brief.html`: a self-contained, printable programme-review brief that
+  explains the product in plain language, tours all ten features, lists the stack
+  and every PR by phase, collects the metrics, and includes a timed demo script,
+  a question bank, the known limits, and a jargon decoder. Linked from the README
+  documentation list.
 
 ### Changed
 
@@ -34,6 +39,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Fixed
 
+- The changelog listed `tests/test_brand.py` as 11 tests; the dark-mode hue test
+  added with the theme toggle makes 12.
 - Dark-mode dropdowns were unreadable: native `<option>`s inherited light page
   ink on the OS's white popup sheet. Options now set `background: var(--surface)`
   and `color: var(--ink)`, and the page tells native controls the theme through
