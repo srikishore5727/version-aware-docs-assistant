@@ -5,6 +5,7 @@ Chroma) plus a feedback database. It needs a **persistent process with a writabl
 disk**, not a serverless function, so it ships as a Docker image.
 
 - **Platform:** Render, free plan, `singapore` region, built from `Dockerfile`.
+- **Live:** <https://vada-nds8.onrender.com>
 - **Blueprint:** `render.yaml` at the repository root.
 - **Health check:** `/health`.
 - **Auto-deploy:** on every push to `main`.
