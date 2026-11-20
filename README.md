@@ -5,6 +5,9 @@
 
 Ask a question about a product's API and get a short answer grounded in the exact document and version it came from.
 
+**Live:** <https://vada-nds8.onrender.com> - free Render instance, kept warm by `.github/workflows/keepalive.yml`. If it has been idle for more than 15 minutes, the first visit can take ~40 s while the container wakes.
+
+
 ## Problem
 
 A software vendor maintains API references, migration guides, and changelogs across multiple product versions. Developers waste time cross-referencing pages and still make integration errors, because no system answers a version-specific question with the exact source.
@@ -389,6 +392,8 @@ undefined, or the dark theme stops using the brand hues.
 
 ## Deployment
 
+Live at **<https://vada-nds8.onrender.com>**.
+
 The app ships as a Docker image and deploys to Render straight from this
 repository. The free plan runs one container, uses `/health` as its health
 check, and rebuilds the index from `corpus/` at boot, so a deploy needs nothing
@@ -396,6 +401,8 @@ beyond the `GEMINI_API_KEY` secret.
 
 - Image: `Dockerfile` (Python 3.11, `uvicorn` bound to `$PORT`)
 - Blueprint: `render.yaml` (free plan, Singapore, auto-deploy on `main`)
+- Keep-alive: `.github/workflows/keepalive.yml` pings `/health` every 10 minutes
+  so the free instance does not sleep in front of a reviewer
 - Guide: [Deployment](docs/DEPLOYMENT.md) - setup, verification, cold starts, troubleshooting
 
 ## Documentation

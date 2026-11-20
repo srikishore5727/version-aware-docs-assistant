@@ -9,6 +9,12 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
+- Live deployment: <https://vada-nds8.onrender.com> on Render's free plan, built
+  from `Dockerfile` on every push to `main`. Verified live: `/health` ok,
+  `/api/index/status` 12 docs / 60 chunks / 60 vectors fresh, three demo
+  questions answered (first 3 s, cached 143 ms), sourdough `not_found`.
+- `.github/workflows/keepalive.yml`: pings `/health` every 10 minutes so the free
+  instance stays warm and a shared link opens immediately.
 - `Dockerfile` and `.dockerignore`: the app ships as a reproducible
   `python:3.11-slim` image that installs `requirements.txt`, copies only `app/`
   and `corpus/`, builds the index at boot, and serves `uvicorn` on `$PORT`.

@@ -1,0 +1,19 @@
+name: Keep the demo awake
+
+# Render's free plan sleeps after ~15 minutes without traffic, and a cold start
+# costs the reader ~40 s. A ping every 10 minutes keeps the instance live inside
+# the free 750 hours, so a link sent to a reviewer opens immediately.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /health
+        run: curl -fsS --max-time 90 --retry 2 --retry-delay 5 https://vada-nds8.onrender.com/health
