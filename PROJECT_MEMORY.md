@@ -322,12 +322,14 @@ answer.notice  # "" for current-only citations
 ## 9. After 1.0 - maintenance notes
 
 There is no Day 21 in the plan, but a short set of post-release changes shipped
-between 30 Oct and 4 Nov: the UI drifted from the brand files, so
+between 30 Oct and 20 Nov: the UI drifted from the brand files, so
 `app/static/app.css` was rebuilt on a token layer and `tests/test_brand.py` now
 guards it; a theme toggle fixed unreadable dark-mode dropdowns; the default
 generation model moved to the GA endpoint after the preview began returning
-`503`; and `docs/demo-brief.html` collects the product, the build and the demo
-script for a programme review. If this project continues, the natural next
+`503`; `docs/demo-brief.html` collects the product, the build and the demo
+script for a programme review; and the app now ships as a Docker image with a
+Render blueprint (`Dockerfile`, `render.yaml`, `docs/DEPLOYMENT.md`) so a live
+URL exists for the viva. If this project continues, the natural next
 steps are:
 
 1. Replace the 12-document sample corpus with a real docs pipeline (the ingest
@@ -395,3 +397,4 @@ Keep `PROJECT_MEMORY.md` current if the project is handed on.
 | 21 | 30 Oct 2026 | Post-release brand fix: `app.css` rebuilt on 51 brand tokens (palette, radii, shadows, type, easing), off-palette colours and `outline: none` removed, amber reserved for the miss panel, dark-mode `--surface` bug fixed, `tests/test_brand.py` (11 tests), README brand section, 175 tests |
 | 22 | 31 Oct 2026 | Theme control: sun/moon toggle with stored choice and pre-paint `data-theme` bootstrap, dual dark paths (`prefers-color-scheme` + `[data-theme="dark"]`), readable dropdown options in dark mode, `tests/test_theme.py` (10 tests), 186 tests |
 | 23 | 4 Nov 2026 | Release hardening and review pack: default generation model moved to GA `gemini-3.1-flash-lite` after the preview returned `503 UNAVAILABLE` and 16-25 s responses; `docs/demo-brief.html` programme-review brief (plain-language product tour, stack, all 29 PRs by phase, metrics, 15-minute demo script, Q&A bank, limits, jargon decoder, print styles); README docs link; 186 tests |
+| 24 | 20 Nov 2026 | Deployment: production `Dockerfile` (`python:3.11-slim`, boot-time index build, `$PORT`), `.dockerignore`, `render.yaml` free-plan Docker service with `/health` check and `sync: false` API key, `docs/DEPLOYMENT.md`, README `Deployment` section; 186 tests |

@@ -9,6 +9,17 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
+- `Dockerfile` and `.dockerignore`: the app ships as a reproducible
+  `python:3.11-slim` image that installs `requirements.txt`, copies only `app/`
+  and `corpus/`, builds the index at boot, and serves `uvicorn` on `$PORT`.
+- `render.yaml`: a Render blueprint for one free-plan Docker service in
+  Singapore with `/health` as the health check, auto-deploy on `main`, and
+  `GEMINI_API_KEY` marked `sync: false` so the secret never enters the repository.
+- `docs/DEPLOYMENT.md`: why the app needs a container rather than a serverless
+  platform, one-time setup, a four-step verification sequence, free-plan
+  behaviour (sleep, ephemeral disk, 512 MB), redeploy and troubleshooting.
+- README `Deployment` section linking the image, blueprint and guide.
+
 - A sun/moon theme toggle in the header. The page follows the system preference
   until the reader picks a theme; the choice is stored in `localStorage`, applied
   as `data-theme` before first paint (no flash), and keeps winning if the OS

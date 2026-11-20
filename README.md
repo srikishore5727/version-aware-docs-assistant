@@ -387,10 +387,22 @@ undefined, or the dark theme stops using the brand hues.
 | 19 | Performance tuning | Done |
 | 20 | v1.0.0 release | Done |
 
+## Deployment
+
+The app ships as a Docker image and deploys to Render straight from this
+repository. The free plan runs one container, uses `/health` as its health
+check, and rebuilds the index from `corpus/` at boot, so a deploy needs nothing
+beyond the `GEMINI_API_KEY` secret.
+
+- Image: `Dockerfile` (Python 3.11, `uvicorn` bound to `$PORT`)
+- Blueprint: `render.yaml` (free plan, Singapore, auto-deploy on `main`)
+- Guide: [Deployment](docs/DEPLOYMENT.md) - setup, verification, cold starts, troubleshooting
+
 ## Documentation
 
 - [Changelog](CHANGELOG.md) - release history
 - [Product requirements](docs/PRD.md)
+- [Deployment](docs/DEPLOYMENT.md) - container, Render blueprint, verification steps
 - [RAG architecture](docs/RAG_ARCHITECTURE.md) - pipeline, prompt contract, failure behaviour
 - [Project memory](PROJECT_MEMORY.md) - read this before continuing the build
 - [Programme review brief](docs/demo-brief.html) - the product, the build, and the demo script on one page
